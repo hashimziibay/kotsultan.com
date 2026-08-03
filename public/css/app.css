@@ -1244,8 +1244,20 @@ body {
   height: 100%;
 }
 
+.h-\[20px\] {
+  height: 20px;
+}
+
+.h-\[54px\] {
+  height: 54px;
+}
+
 .max-h-72 {
   max-height: 18rem;
+}
+
+.max-h-\[360px\] {
+  max-height: 360px;
 }
 
 .min-h-\[140px\] {
@@ -1346,6 +1358,10 @@ body {
 
 .w-full {
   width: 100%;
+}
+
+.w-\[20px\] {
+  width: 20px;
 }
 
 .min-w-0 {
@@ -2288,6 +2304,10 @@ body {
 
 .leading-tight {
   line-height: 1.25;
+}
+
+.leading-normal {
+  line-height: 1.5;
 }
 
 .tracking-tight {
