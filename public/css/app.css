@@ -871,6 +871,10 @@ body {
   visibility: visible;
 }
 
+.invisible {
+  visibility: hidden;
+}
+
 .static {
   position: static;
 }
@@ -1014,6 +1018,10 @@ body {
 
 .z-50 {
   z-index: 50;
+}
+
+.z-\[99999\] {
+  z-index: 99999;
 }
 
 .-mx-4 {
@@ -1220,6 +1228,10 @@ body {
   height: 2.25rem;
 }
 
+.h-\[20px\] {
+  height: 20px;
+}
+
 .h-\[2px\] {
   height: 2px;
 }
@@ -1230,6 +1242,10 @@ body {
 
 .h-\[50\%\] {
   height: 50%;
+}
+
+.h-\[54px\] {
+  height: 54px;
 }
 
 .h-\[60\%\] {
@@ -1244,18 +1260,6 @@ body {
   height: 100%;
 }
 
-.h-\[20px\] {
-  height: 20px;
-}
-
-.h-\[54px\] {
-  height: 54px;
-}
-
-.max-h-72 {
-  max-height: 18rem;
-}
-
 .max-h-\[360px\] {
   max-height: 360px;
 }
@@ -1264,12 +1268,12 @@ body {
   min-height: 140px;
 }
 
-.min-h-screen {
-  min-height: 100vh;
-}
-
 .min-h-\[46px\] {
   min-height: 46px;
+}
+
+.min-h-screen {
+  min-height: 100vh;
 }
 
 .w-10 {
@@ -1344,6 +1348,10 @@ body {
   width: 2.25rem;
 }
 
+.w-\[20px\] {
+  width: 20px;
+}
+
 .w-\[50\%\] {
   width: 50%;
 }
@@ -1358,10 +1366,6 @@ body {
 
 .w-full {
   width: 100%;
-}
-
-.w-\[20px\] {
-  width: 20px;
 }
 
 .min-w-0 {
@@ -1502,6 +1506,27 @@ body {
 
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-ping {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
 .cursor-pointer {
@@ -1815,6 +1840,14 @@ body {
 
 .border-white\/20 {
   border-color: rgb(255 255 255 / 0.2);
+}
+
+.border-emerald-500\/20 {
+  border-color: rgb(16 185 129 / 0.2);
+}
+
+.border-t-transparent {
+  border-top-color: transparent;
 }
 
 .bg-background {
@@ -2294,6 +2327,10 @@ body {
   line-height: 1;
 }
 
+.leading-normal {
+  line-height: 1.5;
+}
+
 .leading-relaxed {
   line-height: 1.625;
 }
@@ -2304,10 +2341,6 @@ body {
 
 .leading-tight {
   line-height: 1.25;
-}
-
-.leading-normal {
-  line-height: 1.5;
 }
 
 .tracking-tight {
