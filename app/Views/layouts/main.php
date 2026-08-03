@@ -33,6 +33,23 @@
     <script defer src="<?= base_url('js/click-spark.js') ?>"></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200 antialiased relative">
+    
+    <!-- Global Preloader -->
+    <div id="global-preloader" class="fixed inset-0 z-[99999] bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center transition-all duration-500">
+        <div class="relative flex items-center justify-center mb-4">
+            <!-- Pulsing outer ring -->
+            <div class="absolute inset-0 rounded-full border-4 border-emerald-500/20 animate-ping"></div>
+            <!-- Spinning inner ring -->
+            <div class="absolute w-16 h-16 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
+            <!-- Center Icon -->
+            <div class="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 z-10">
+                <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
+            </div>
+        </div>
+        <p class="text-sm font-semibold text-slate-500 dark:text-slate-400 animate-pulse tracking-wide">
+            <?= lang('App.brand_name') ?? 'KotSultan' ?>
+        </p>
+    </div>
 
     <!-- Magic UI Smooth Cursor (Desktop Only) -->
     <?= $this->include('components/smooth_cursor') ?>
@@ -177,6 +194,17 @@
             }, { threshold: 0.3 });
 
             document.querySelectorAll('[data-count-to]').forEach(el => counterObserver.observe(el));
+        });
+
+        // Global Preloader Fade-out
+        window.addEventListener('load', () => {
+            const preloader = document.getElementById('global-preloader');
+            if (preloader) {
+                preloader.classList.add('opacity-0', 'invisible');
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                }, 500);
+            }
         });
     </script>
 </body>

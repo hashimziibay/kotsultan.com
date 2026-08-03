@@ -187,7 +187,7 @@ $optionsJson = json_encode($formattedOptions, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                 <li @click="select(option.value)"
                     @mousemove="highlightedIndex = index"
                     :class="{
-                        'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-100': highlightedIndex === index || String(selected) === String(option.value),
+                        'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400': highlightedIndex === index || String(selected) === String(option.value),
                         'text-slate-700 dark:text-slate-300': highlightedIndex !== index && String(selected) !== String(option.value)
                     }"
                     class="flex items-center justify-between px-3.5 min-h-[46px] rounded-xl cursor-pointer text-base leading-normal transition-colors group"
