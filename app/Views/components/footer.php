@@ -46,11 +46,11 @@
                     <?= lang('App.categories') ?>
                 </h4>
                 <ul class="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                    <li><a href="<?= base_url('directory') ?>" class="hover:text-slate-900 dark:hover:text-white transition-colors"><?= lang('App.cat_medical') ?></a></li>
-                    <li><a href="<?= base_url('directory') ?>" class="hover:text-slate-900 dark:hover:text-white transition-colors"><?= lang('App.cat_education') ?></a></li>
-                    <li><a href="<?= base_url('directory') ?>" class="hover:text-slate-900 dark:hover:text-white transition-colors"><?= lang('App.cat_shops') ?></a></li>
-                    <li><a href="<?= base_url('directory') ?>" class="hover:text-slate-900 dark:hover:text-white transition-colors"><?= lang('App.cat_food') ?></a></li>
-                    <li><a href="<?= base_url('directory') ?>" class="hover:text-slate-900 dark:hover:text-white transition-colors"><?= lang('App.cat_crafts') ?></a></li>
+                    <li><a href="<?= base_url('directory') ?>" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"><?= lang('App.cat_medical') ?></a></li>
+                    <li><a href="<?= base_url('directory') ?>" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"><?= lang('App.cat_education') ?></a></li>
+                    <li><a href="<?= base_url('directory') ?>" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"><?= lang('App.cat_shops') ?></a></li>
+                    <li><a href="<?= base_url('directory') ?>" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"><?= lang('App.cat_food') ?></a></li>
+                    <li><a href="<?= base_url('directory') ?>" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"><?= lang('App.cat_crafts') ?></a></li>
                 </ul>
             </div>
 
