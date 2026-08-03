@@ -129,20 +129,20 @@ $optionsJson = json_encode($formattedOptions, JSON_HEX_TAG | JSON_HEX_APOS | JSO
     <!-- Select Button -->
     <button type="button"
             @click="toggle()"
-            class="w-full flex items-center justify-between px-4 h-14 bg-slate-50 hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-sm md:text-base font-medium outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all shadow-sm cursor-pointer <?= esc($class) ?>"
+            class="w-full flex items-center justify-between px-4 h-[54px] bg-slate-50 hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-base leading-normal font-medium outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all shadow-sm cursor-pointer <?= esc($class) ?>"
             :class="open ? 'ring-2 ring-emerald-500/20 border-emerald-500 bg-white dark:bg-slate-800' : ''"
             aria-haspopup="listbox"
             :aria-expanded="open">
         
-        <div class="flex items-center gap-3 truncate">
+        <div class="flex items-center gap-2.5 truncate">
             <template x-if="selectedOption && selectedOption.icon">
-                <i :data-lucide="selectedOption.icon" class="w-5 h-5 text-emerald-600 dark:text-emerald-500 flex-shrink-0"></i>
+                <i :data-lucide="selectedOption.icon" class="w-[20px] h-[20px] text-emerald-600 dark:text-emerald-500 flex-shrink-0"></i>
             </template>
             <span class="truncate" x-text="selectedOption ? selectedOption.label : '<?= esc($placeholder) ?>'"></span>
         </div>
 
         <i data-lucide="chevron-down" 
-           class="w-5 h-5 text-slate-400 transition-transform duration-200 flex-shrink-0"
+           class="w-[20px] h-[20px] text-slate-400 transition-transform duration-200 flex-shrink-0"
            :class="open ? 'rotate-180 text-emerald-500' : ''"></i>
     </button>
 
@@ -160,22 +160,22 @@ $optionsJson = json_encode($formattedOptions, JSON_HEX_TAG | JSON_HEX_APOS | JSO
         
         <!-- Search Input -->
         <?php if ($searchable): ?>
-        <div class="p-2 border-b border-slate-100 dark:border-slate-700/50 relative">
-            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-4 rtl:right-4 rtl:left-auto top-1/2 -translate-y-1/2"></i>
+        <div class="p-1.5 border-b border-slate-100 dark:border-slate-700/50 relative">
+            <i data-lucide="search" class="w-[20px] h-[20px] text-slate-400 absolute left-3.5 rtl:right-3.5 rtl:left-auto top-1/2 -translate-y-1/2"></i>
             <input type="text"
                    x-ref="searchInput"
                    x-model="search"
                    @keydown.arrow-down.stop.prevent="navigate(1)"
                    @keydown.arrow-up.stop.prevent="navigate(-1)"
                    @keydown.enter.stop.prevent="selectHighlighted()"
-                   class="w-full pl-10 pr-3 rtl:pr-10 rtl:pl-3 h-11 bg-slate-50 dark:bg-slate-900/50 border border-transparent rounded-xl text-sm md:text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition-colors"
+                   class="w-full pl-10 pr-3 rtl:pr-10 rtl:pl-3 h-12 bg-slate-50 dark:bg-slate-900/50 border border-transparent rounded-xl text-base leading-normal text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition-colors"
                    placeholder="<?= lang('App.search_placeholder') ?? 'Search...' ?>"
                    autocomplete="off">
         </div>
         <?php endif; ?>
 
         <!-- Options List -->
-        <ul class="max-h-72 overflow-y-auto p-1.5 custom-scrollbar" x-ref="listbox">
+        <ul class="max-h-[360px] overflow-y-auto p-1.5 custom-scrollbar" x-ref="listbox">
             
             <template x-if="filteredOptions.length === 0">
                 <li class="py-4 px-4 text-center text-sm text-slate-500 dark:text-slate-400">
@@ -190,14 +190,14 @@ $optionsJson = json_encode($formattedOptions, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                         'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-100': highlightedIndex === index || String(selected) === String(option.value),
                         'text-slate-700 dark:text-slate-300': highlightedIndex !== index && String(selected) !== String(option.value)
                     }"
-                    class="flex items-center justify-between px-3.5 py-3 rounded-xl cursor-pointer text-sm md:text-base transition-colors group"
+                    class="flex items-center justify-between px-3.5 min-h-[46px] rounded-xl cursor-pointer text-base leading-normal transition-colors group"
                     role="option"
                     :aria-selected="String(selected) === String(option.value)">
                     
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2.5">
                         <template x-if="option.icon">
                             <i :data-lucide="option.icon" 
-                               class="w-5 h-5 flex-shrink-0"
+                               class="w-[20px] h-[20px] flex-shrink-0"
                                :class="String(selected) === String(option.value) ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 group-hover:text-emerald-500 transition-colors'"></i>
                         </template>
                         <span x-text="option.label" class="font-medium" :class="String(selected) === String(option.value) ? 'font-bold' : ''"></span>
@@ -205,7 +205,7 @@ $optionsJson = json_encode($formattedOptions, JSON_HEX_TAG | JSON_HEX_APOS | JSO
 
                     <!-- Check Icon for selected item -->
                     <template x-if="String(selected) === String(option.value)">
-                        <i data-lucide="check" class="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0"></i>
+                        <i data-lucide="check" class="w-[20px] h-[20px] text-emerald-600 dark:text-emerald-400 flex-shrink-0"></i>
                     </template>
                 </li>
             </template>

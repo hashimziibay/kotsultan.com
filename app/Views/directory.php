@@ -77,22 +77,7 @@
             </div>
         </form>
 
-        <!-- Category Shortcuts Bar -->
-        <?php if (!empty($categories)): ?>
-        <div class="mt-6 flex flex-wrap items-center gap-2">
-            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 me-1"><?= lang('App.popular_shortcuts') ?></span>
-            <a href="<?= base_url('directory') ?>" 
-               class="btn btn-sm <?= empty($selectedCategory) ? 'btn-primary' : 'btn-secondary' ?>">
-                <?= lang('App.all_text') ?>
-            </a>
-            <?php foreach ($categories as $cat): ?>
-                <a href="<?= base_url('directory?category=' . $cat['id']) ?>" 
-                   class="btn btn-sm <?= ($selectedCategory == $cat['id']) ? 'btn-primary' : 'btn-secondary' ?>">
-                    <?= $isUrdu ? esc($cat['name_ur']) : esc($cat['name_en']) ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
+
 
     </div>
 </div>
