@@ -1256,6 +1256,10 @@ body {
   min-height: 100vh;
 }
 
+.min-h-\[46px\] {
+  min-height: 46px;
+}
+
 .w-10 {
   width: 2.5rem;
 }

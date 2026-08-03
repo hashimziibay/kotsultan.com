@@ -129,7 +129,7 @@ $optionsJson = json_encode($formattedOptions, JSON_HEX_TAG | JSON_HEX_APOS | JSO
     <!-- Select Button -->
     <button type="button"
             @click="toggle()"
-            class="w-full flex items-center justify-between px-4 h-14 bg-slate-50 hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-sm md:text-base font-medium outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all shadow-sm cursor-pointer <?= esc($class) ?>"
+            class="w-full flex items-center justify-between px-4 h-14 bg-slate-50 hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-base font-medium outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all shadow-sm cursor-pointer <?= esc($class) ?>"
             :class="open ? 'ring-2 ring-emerald-500/20 border-emerald-500 bg-white dark:bg-slate-800' : ''"
             aria-haspopup="listbox"
             :aria-expanded="open">
@@ -160,15 +160,15 @@ $optionsJson = json_encode($formattedOptions, JSON_HEX_TAG | JSON_HEX_APOS | JSO
         
         <!-- Search Input -->
         <?php if ($searchable): ?>
-        <div class="p-2 border-b border-slate-100 dark:border-slate-700/50 relative">
-            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-4 rtl:right-4 rtl:left-auto top-1/2 -translate-y-1/2"></i>
+        <div class="p-1.5 border-b border-slate-100 dark:border-slate-700/50 relative">
+            <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-3.5 rtl:right-3.5 rtl:left-auto top-1/2 -translate-y-1/2"></i>
             <input type="text"
                    x-ref="searchInput"
                    x-model="search"
                    @keydown.arrow-down.stop.prevent="navigate(1)"
                    @keydown.arrow-up.stop.prevent="navigate(-1)"
                    @keydown.enter.stop.prevent="selectHighlighted()"
-                   class="w-full pl-10 pr-3 rtl:pr-10 rtl:pl-3 h-11 bg-slate-50 dark:bg-slate-900/50 border border-transparent rounded-xl text-sm md:text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition-colors"
+                   class="w-full pl-10 pr-3 rtl:pr-10 rtl:pl-3 h-12 bg-slate-50 dark:bg-slate-900/50 border border-transparent rounded-xl text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition-colors"
                    placeholder="<?= lang('App.search_placeholder') ?? 'Search...' ?>"
                    autocomplete="off">
         </div>
@@ -190,7 +190,7 @@ $optionsJson = json_encode($formattedOptions, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                         'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-100': highlightedIndex === index || String(selected) === String(option.value),
                         'text-slate-700 dark:text-slate-300': highlightedIndex !== index && String(selected) !== String(option.value)
                     }"
-                    class="flex items-center justify-between px-3.5 py-3 rounded-xl cursor-pointer text-sm md:text-base transition-colors group"
+                    class="flex items-center justify-between px-3.5 py-2.5 min-h-[46px] rounded-xl cursor-pointer text-base transition-colors group"
                     role="option"
                     :aria-selected="String(selected) === String(option.value)">
                     
