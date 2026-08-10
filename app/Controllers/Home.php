@@ -9,59 +9,69 @@ use App\Models\TagModel;
 
 class Home extends BaseController
 {
-    protected function setLocale()
-    {
-        $session = session();
-        $request = service('request');
-
-        // Check GET param first, then Session, then Cookie, default to 'en'
-        $getLang = $this->request->getGet('lang');
-        $sessionLang = $session->get('lang');
-        $cookieLang = $this->request->getCookie('lang');
-
-        $lang = $getLang ?? $sessionLang ?? $cookieLang ?? 'en';
-        if (!in_array($lang, ['en', 'ur'])) {
-            $lang = 'en';
-        }
-
-        $session->set('lang', $lang);
-        $this->request->setLocale($lang);
-        service('language')->setLocale($lang);
-
-        return $lang;
-    }
-
     public function lang($locale)
     {
-        $session = session();
-
-        if (in_array($locale, ['en', 'ur'])) {
-            $session->set('lang', $locale);
-            setcookie('lang', $locale, time() + (86400 * 365), '/');
-            $this->request->setLocale($locale);
-            service('language')->setLocale($locale);
+        if (!in_array($locale, ['en', 'ur'], true)) {
+            $locale = config('App')->defaultLocale;
         }
 
+        session()->set('lang', $locale);
+
+        // Use CodeIgniter's Response object to set the cookie
+        $this->response->setCookie([
+            'name'     => 'lang',
+            'value'    => $locale,
+            'expire'   => 86400 * 365,
+            'path'     => '/',
+            'secure'   => false,
+            'httponly' => true,
+        ]);
+
+        // Preserve the current page when switching language. The referer is a
+        // full URL that already contains the base path, so redirecting to it
+        // verbatim can never duplicate the project directory (the old bug that
+        // produced /public/index.php/kts%20web%20project/public/... -> 404).
         $referer = $this->request->getServer('HTTP_REFERER');
-        if ($referer) {
-            // Remove existing lang query param if present
-            $refererPath = strtok($referer, '?');
-            return redirect()->to($refererPath . '?lang=' . $locale);
+        if (is_string($referer) && $referer !== '') {
+            $refHost = (string) parse_url($referer, PHP_URL_HOST);
+            $ourHost = (string) parse_url(base_url(), PHP_URL_HOST);
+
+            // Cross-host referer: never follow it (open-redirect safety).
+            if ($refHost === '' || strtolower($refHost) === strtolower($ourHost)) {
+                // Normalize the referer path so the /lang/ loop guard matches
+                // regardless of percent-encoding or a leading index.php.
+                $refPath = rawurldecode(ltrim((string) parse_url($referer, PHP_URL_PATH), '/'));
+                $refPath = preg_replace('#^index\.php/?#i', '', $refPath);
+
+                // Strip the app's own base path (decoded) so the guard works on
+                // any deployment (subfolder like /kts web project/public or root).
+                $basePath = rawurldecode(ltrim(rtrim((string) parse_url(base_url(), PHP_URL_PATH), '/'), '/'));
+                if ($basePath !== '') {
+                    $refPath = preg_replace('#^' . preg_quote($basePath, '#') . '/?#i', '', $refPath);
+                }
+
+                // If the referer is the /lang/ route itself, redirecting there
+                // would loop forever -> fall back to the homepage.
+                if (preg_match('~^lang/(en|ur)(?:[/?#]|$)~i', $refPath)) {
+                    return redirect()->to(base_url('/'));
+                }
+
+                return redirect()->to($referer);
+            }
         }
-        return redirect()->to(base_url('?lang=' . $locale));
+
+        return redirect()->to(base_url('/'));
     }
 
     public function index()
     {
-        $lang = $this->setLocale();
+        $lang = service('request')->getLocale();
 
         $categoryModel = new CategoryModel();
         $businessModel = new BusinessModel();
-        $wallModel     = new WallModel();
 
-        $categories       = $categoryModel->getActiveCategories();
-        $recentBusinesses = $businessModel->getRecentBusinesses(6);
-        $wallEntries      = $wallModel->getActiveWallEntries();
+        $allCategories    = $categoryModel->getActiveCategories();
+        $recentBusinesses = $businessModel->getRecentBusinesses(18);
 
         // Compute dynamic directory statistics from database
         $categoryCounts = $businessModel->getCategoryCounts();
@@ -74,22 +84,72 @@ class Home extends BaseController
 
         $stats = [
             'total_businesses' => $totalBusinesses,
-            'categories_count' => count($categories),
+            'categories_count' => count($allCategories),
             'category_totals'  => $categoryTotalsMap,
         ];
 
+        // ---------------------------------------------------------
+        // Generate Popular Categories: Max 6, "Utensil Stores" first
+        // ---------------------------------------------------------
+        $popularCategories = [];
+        $otherCategories   = [];
+        $utensilCategory   = null;
+
+        foreach ($allCategories as $cat) {
+            if ($utensilCategory === null && stripos($cat['name_en'] ?? '', 'utensil') !== false) {
+                $utensilCategory = $cat;
+            } else {
+                $otherCategories[] = $cat;
+            }
+        }
+
+        if ($utensilCategory !== null) {
+            $popularCategories[] = $utensilCategory;
+        }
+
+        // Shuffle and pick up to 5 random categories to make it 6 in total
+        shuffle($otherCategories);
+        $needed = 6 - count($popularCategories);
+        $randomSelections = array_slice($otherCategories, 0, $needed);
+        $popularCategories = array_merge($popularCategories, $randomSelections);
+
+        // ---------------------------------------------------------
+        // Generate Recent Businesses: Max 3, "Bismillah Utensil Store" first
+        // ---------------------------------------------------------
+        $finalRecent = [];
+        $bismillahStore = $businessModel->getLocalizedBusiness(698); // Bismillah Utensils Store
+
+        if ($bismillahStore !== null) {
+            $finalRecent[] = $bismillahStore;
+        }
+
+        $recentPool = $businessModel->getRecentBusinesses(20);
+        $otherRecent = [];
+        
+        foreach ($recentPool as $bus) {
+            if ($bus['id'] != 698) {
+                $otherRecent[] = $bus;
+            }
+        }
+
+        shuffle($otherRecent);
+        $neededRecent = 3 - count($finalRecent);
+        $randomRecent = array_slice($otherRecent, 0, $neededRecent);
+        $finalRecent = array_merge($finalRecent, $randomRecent);
+
         return view('home', [
-            'lang'             => $lang,
-            'categories'       => $categories,
-            'recentBusinesses' => $recentBusinesses,
-            'wallEntries'      => $wallEntries,
-            'stats'            => $stats,
+            'lang'              => $lang,
+            'categories'        => $allCategories,      // All categories for other uses if needed
+            'popularCategories' => $popularCategories, // Only 6 for the homepage section
+            'recentBusinesses'  => $finalRecent,       // Only 3 for the homepage section
+            'wallEntries'       => [],
+            'stats'             => $stats,
         ]);
     }
 
     public function directory()
     {
-        $lang = $this->setLocale();
+        $lang = service('request')->getLocale();
 
         $categoryModel = new CategoryModel();
         $businessModel = new BusinessModel();
@@ -99,8 +159,9 @@ class Home extends BaseController
         $categoryId = $this->request->getGet('category');
         $tagId      = $this->request->getGet('tag');
 
+        $page       = max(1, (int) ($this->request->getGet('page') ?? 1));
         $categories = $categoryModel->getActiveCategories();
-        $businesses = $businessModel->searchDirectory($query, $categoryId, $tagId);
+        $searchData = $businessModel->searchDirectory($query, $categoryId, $tagId, $page, 30);
 
         // Compute category totals
         $categoryCounts = $businessModel->getCategoryCounts();
@@ -112,7 +173,11 @@ class Home extends BaseController
         return view('directory', [
             'lang'             => $lang,
             'categories'       => $categories,
-            'businesses'       => $businesses,
+            'businesses'       => $searchData['businesses'],
+            'totalResults'     => $searchData['total'],
+            'currentPage'      => $searchData['page'],
+            'totalPages'       => $searchData['totalPages'],
+            'perPage'          => $searchData['perPage'],
             'searchQuery'      => $query,
             'selectedCategory' => $categoryId,
             'categoryTotals'   => $categoryTotalsMap,
@@ -124,22 +189,93 @@ class Home extends BaseController
         return $this->directory();
     }
 
+    public function emergency()
+    {
+        $lang = service('request')->getLocale();
+
+        $emergencyModel = new \App\Models\EmergencyModel();
+
+        $query      = $this->request->getGet('q');
+        $category   = $this->request->getGet('category') ?? 'all';
+        $page       = max(1, (int) ($this->request->getGet('page') ?? 1));
+
+        $searchData = $emergencyModel->searchEmergencyContacts($query, $category, $page, 2000);
+        $categories = $emergencyModel->getCategories();
+
+        $allCount = 0;
+        foreach ($categories as $cat) {
+            $allCount += (int)$cat['count'];
+        }
+
+        return view('emergency', [
+            'lang'             => $lang,
+            'contacts'         => $searchData['contacts'],
+            'totalResults'     => $searchData['total'],
+            'currentPage'      => $searchData['page'],
+            'totalPages'       => $searchData['totalPages'],
+            'perPage'          => $searchData['perPage'],
+            'searchQuery'      => $query,
+            'selectedCategory' => $category,
+            'categories'       => $categories,
+            'allCount'         => $allCount,
+        ]);
+    }
+
     public function wall()
     {
-        $lang = $this->setLocale();
+        $lang = service('request')->getLocale();
 
-        $wallModel   = new WallModel();
-        $wallEntries = $wallModel->getActiveWallEntries();
+        $wallCatModel = new \App\Models\WallCategoryModel();
+        $wallModel    = new WallModel();
+
+        $query      = $this->request->getGet('q');
+        $category   = $this->request->getGet('category');
+        $sort       = $this->request->getGet('sort') ?? 'newest';
+        $page       = max(1, (int) ($this->request->getGet('page') ?? 1));
+
+        $categories = $wallCatModel->getActiveCategories();
+        $searchData = $wallModel->searchWallEntries($query, $category, $sort, $page, 18);
 
         return view('wall', [
+            'lang'             => $lang,
+            'wallCategories'   => $categories,
+            'wallEntries'      => $searchData['entries'],
+            'totalResults'     => $searchData['total'],
+            'currentPage'      => $searchData['page'],
+            'totalPages'       => $searchData['totalPages'],
+            'perPage'          => $searchData['perPage'],
+            'searchQuery'      => $query,
+            'selectedCategory' => $category,
+            'selectedSort'     => $sort,
+        ]);
+    }
+
+    public function wallProfile($idOrSlug = null)
+    {
+        $lang = service('request')->getLocale();
+        if ($idOrSlug === null) {
+            $idOrSlug = $this->request->getGet('slug') ?: $this->request->getGet('id');
+        }
+
+        $wallModel   = new WallModel();
+        $personality = $wallModel->getWallPersonality($idOrSlug);
+
+        if (!$personality) {
+            return redirect()->to(base_url('wall-of-kot-sultan'));
+        }
+
+        $related = $wallModel->getRelatedPersonalities($personality['category_id'] ?? null, $personality['id'], 3);
+
+        return view('wall_profile', [
             'lang'        => $lang,
-            'wallEntries' => $wallEntries,
+            'item'        => $personality,
+            'related'     => $related,
         ]);
     }
 
     public function volunteer()
     {
-        $lang = $this->setLocale();
+        $lang = service('request')->getLocale();
 
         $helpOptions = [
             ['value' => 'add_businesses', 'label_en' => 'Add missing businesses', 'label_ur' => 'غائب کاروبار شامل کریں'],
@@ -160,7 +296,7 @@ class Home extends BaseController
 
     public function about()
     {
-        $lang = $this->setLocale();
+        $lang = service('request')->getLocale();
 
         $wallModel     = new WallModel();
         $businessModel = new BusinessModel();
@@ -190,7 +326,7 @@ class Home extends BaseController
 
     public function contact()
     {
-        $lang = $this->setLocale();
+        $lang = service('request')->getLocale();
 
         // Local Kot Sultan Emergency & Service Contacts
         $emergencyContacts = [
@@ -198,36 +334,33 @@ class Home extends BaseController
                 'name_en' => 'Police Station Kot Sultan',
                 'name_ur' => 'تھانہ کوٹ سلطان',
                 'phone'   => '068-5544100',
-                'category' => 'Police / Law',
+                'category_en' => 'Police / Law',
+                'category_ur' => 'پولیس و قانون',
                 'icon'    => 'shield-alert',
             ],
             [
                 'name_en' => 'THQ Hospital Kot Sultan',
                 'name_ur' => 'تحصیل ہیڈکوارٹر ہسپتال کوٹ سلطان',
                 'phone'   => '068-5544200',
-                'category' => 'Medical / Emergency',
+                'category_en' => 'Medical / Emergency',
+                'category_ur' => 'طبی سہولیات / ایمرجنسی',
                 'icon'    => 'hospital',
             ],
             [
                 'name_en' => 'Rescue 1122 Emergency',
                 'name_ur' => 'ریسکیو 1122 ایمرجنسی',
                 'phone'   => '1122',
-                'category' => 'Disaster / Ambulance',
+                'category_en' => 'Disaster / Ambulance',
+                'category_ur' => 'آفات / ایمبولینس',
                 'icon'    => 'ambulance',
             ],
             [
                 'name_en' => 'MEPCO WAPDA Grid Station',
                 'name_ur' => 'میپکو واپڈا گرڈ اسٹیشن',
                 'phone'   => '068-5544300',
-                'category' => 'Electricity / Power',
+                'category_en' => 'Electricity / Power',
+                'category_ur' => 'بجلی اور محکمہ جات',
                 'icon'    => 'zap',
-            ],
-            [
-                'name_en' => 'Kot Sultan Press Club',
-                'name_ur' => 'کوٹ سلطان پریس کلب',
-                'phone'   => '0305-6660169',
-                'category' => 'Media / News',
-                'icon'    => 'newspaper',
             ],
         ];
 
@@ -237,51 +370,51 @@ class Home extends BaseController
         ]);
     }
 
-    public function business()
+    public function business($idOrSlug = null)
     {
-        $lang = $this->setLocale();
-        return view('business', ['lang' => $lang]);
+        $lang = service('request')->getLocale();
+        if ($idOrSlug === null) {
+            $idOrSlug = $this->request->getGet('slug') ?: $this->request->getGet('id');
+        }
+
+        $business = (new BusinessModel())->getLocalizedBusiness($idOrSlug);
+
+        if (!$business) {
+            return redirect()->to(base_url('directory'));
+        }
+
+        // Redirect to clean slug URL if accessed via ID query parameter or numeric route
+        if (!empty($business['slug']) && ($this->request->getGet('id') !== null || (is_numeric($idOrSlug) && $idOrSlug != $business['slug']))) {
+            $canonicalUrl = base_url('listing/' . $business['slug']);
+            if (current_url() !== $canonicalUrl) {
+                return redirect()->to($canonicalUrl, 301);
+            }
+        }
+
+        return view('business', ['lang' => $lang, 'business' => $business]);
     }
 
     public function login()
     {
-        $lang = $this->setLocale();
+        $lang = service('request')->getLocale();
         return view('login', ['lang' => $lang]);
     }
 
     public function signup()
     {
-        $lang = $this->setLocale();
+        $lang = service('request')->getLocale();
         return view('signup', ['lang' => $lang]);
     }
 
     public function dashboard()
     {
-        $lang = $this->setLocale();
+        $lang = service('request')->getLocale();
         return view('dashboard', ['lang' => $lang]);
-    }
-
-    public function admin()
-    {
-        $lang = $this->setLocale();
-        
-        $categoryModel = new CategoryModel();
-        $businessModel = new BusinessModel();
-        $wallModel     = new WallModel();
-        $tagModel      = new TagModel();
-
-        return view('admin', [
-            'lang'       => $lang,
-            'categories' => $categoryModel->findAll(),
-            'businesses' => $businessModel->findAll(),
-            'wall'       => $wallModel->findAll(),
-            'tags'       => $tagModel->findAll(),
-        ]);
     }
 
     public function not_found()
     {
-        $this->setLocale();
+        service('request')->getLocale();
         return view('errors/html/error_404');
     }
 }

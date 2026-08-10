@@ -18,48 +18,6 @@
 </section>
 
 
-<!-- Emergency Contacts Grid -->
-<section class="py-12 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 transition-colors duration-200">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div class="mb-8 text-center flex flex-col items-center">
-            <h2 class="blur-reveal text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-2">
-                <i data-lucide="shield-alert" class="w-5 h-5 text-rose-600"></i>
-                <span><?= lang('App.emergency_title') ?></span>
-            </h2>
-            <p class="blur-reveal text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-xl mx-auto">
-                <?= lang('App.emergency_sub') ?>
-            </p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <?php foreach ($emergencyContacts as $item): ?>
-            <div class="p-5 rounded-xl bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-3 group hover:border-emerald-500 transition-all">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="<?= esc($item['icon']) ?>" class="w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-900 dark:text-white text-sm">
-                            <?= ($lang === 'ur') ? esc($item['name_ur']) : esc($item['name_en']) ?>
-                        </h3>
-                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                            <?= esc($item['category']) ?>
-                        </span>
-                    </div>
-                </div>
-
-                <a href="tel:<?= esc($item['phone']) ?>" class="btn btn-sm btn-outline flex-shrink-0">
-                    <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-600"></i>
-                    <span dir="ltr"><?= esc($item['phone']) ?></span>
-                </a>
-            </div>
-            <?php endforeach; ?>
-        </div>
-
-    </div>
-</section>
-
 
 <!-- Contact Form & Office Info -->
 <section class="py-12 md:py-16 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200/80 dark:border-slate-800 transition-colors duration-200">
@@ -95,13 +53,7 @@
                         </div>
                     </div>
 
-                    <div class="flex items-start gap-3 p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80">
-                        <i data-lucide="phone" class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5"></i>
-                        <div>
-                            <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm"><?= lang('App.helpline_whatsapp') ?></h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5" dir="ltr">+92 305 6660169</p>
-                        </div>
-                    </div>
+
                 </div>
             </div>
 

@@ -18,6 +18,35 @@ class App extends BaseConfig
      */
     public string $baseURL = 'http://localhost:8080/';
 
+    public function __construct()
+    {
+        parent::__construct();
+
+        // Dynamically detect base URL from incoming HTTP request headers for LAN IP & production compatibility
+        if (isset($_SERVER['HTTP_HOST'])) {
+            $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+                || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+
+            $scheme = $isSecure ? 'https://' : 'http://';
+            $host   = $_SERVER['HTTP_HOST'];
+
+            // Extract script directory path (handles subfolders with spaces like /kts%20web%20project/public/ or domain root)
+            $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+            $dirName    = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+
+            if ($dirName && $dirName !== '/') {
+                $segments = explode('/', $dirName);
+                $encoded  = array_map(static fn($s) => rawurlencode(rawurldecode($s)), $segments);
+                $path     = implode('/', $encoded) . '/';
+            } else {
+                $path = '/';
+            }
+
+            $this->baseURL = $scheme . $host . $path;
+        }
+    }
+
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
      * If you want to accept multiple Hostnames, set this.
@@ -120,7 +149,7 @@ class App extends BaseConfig
      *
      * @var list<string>
      */
-    public array $supportedLocales = ['en'];
+    public array $supportedLocales = ['en', 'ur'];
 
     /**
      * --------------------------------------------------------------------------

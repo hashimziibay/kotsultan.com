@@ -12,13 +12,25 @@ class BusinessModel extends Model
     protected $returnType       = 'array';
     protected $allowedFields    = [
         'category_id',
+        'area_id',
+        'village_id',
+        'source_post_id',
         'name_en',
         'name_ur',
         'slug',
         'owner_name',
         'address',
+        'address_en',
+        'address_ur',
+        'description_en',
+        'description_ur',
         'phone',
         'whatsapp',
+        'website',
+        'email',
+        'opening_hours',
+        'gallery_images',
+        'social_links',
         'latitude',
         'longitude',
         'google_map',
@@ -33,33 +45,32 @@ class BusinessModel extends Model
 
     public function getRecentBusinesses($limit = 6)
     {
-        return $this->select('businesses.*, categories.name_en as category_name_en, categories.name_ur as category_name_ur, categories.icon as category_icon')
-                    ->join('categories', 'categories.id = businesses.category_id')
-                    ->where('businesses.status', 'active')
-                    ->orderBy('businesses.created_at', 'DESC')
-                    ->findAll($limit);
+        $rows = $this->baseQuery()
+                     ->where('businesses.status', 'active')
+                     ->orderBy('businesses.created_at', 'DESC')
+                     ->findAll($limit);
+        return $this->localizedRows($rows);
     }
 
-    public function searchDirectory($query = '', $categoryId = null, $tagId = null)
+    public function searchDirectory($query = '', $categoryId = null, $tagId = null, $page = 1, ?int $perPage = null)
     {
-        $builder = $this->select('businesses.*, categories.name_en as category_name_en, categories.name_ur as category_name_ur, categories.icon as category_icon')
-                        ->join('categories', 'categories.id = businesses.category_id')
-                        ->where('businesses.status', 'active');
+        $locale = $this->locale();
+        $builder = $this->baseQuery()->where('businesses.status', 'active');
 
         if (!empty($categoryId)) {
-            $builder->where('businesses.category_id', $categoryId);
-        }
-
-        if (!empty($query)) {
-            $builder->groupStart()
-                    ->like('businesses.name_en', $query)
-                    ->orLike('businesses.name_ur', $query)
-                    ->orLike('businesses.owner_name', $query)
-                    ->orLike('businesses.address', $query)
-                    ->orLike('businesses.phone', $query)
-                    ->orLike('categories.name_en', $query)
-                    ->orLike('categories.name_ur', $query)
-                    ->groupEnd();
+            // Category links use slugs (homepage cards) OR numeric ids (directory
+            // dropdown). Resolve a slug to its category id so the filter never
+            // compares an INT column against a slug string (which MySQL coerces
+            // to 0 and silently returns an empty page).
+            if (!ctype_digit((string) $categoryId)) {
+                $cat = $this->db->table('categories')
+                                ->select('id')
+                                ->where('slug', $categoryId)
+                                ->get()
+                                ->getRowArray();
+                $categoryId = $cat ? (int) $cat['id'] : 0;
+            }
+            $builder->where('businesses.category_id', (int) $categoryId);
         }
 
         if (!empty($tagId)) {
@@ -67,16 +78,133 @@ class BusinessModel extends Model
                     ->where('business_tags.tag_id', $tagId);
         }
 
-        return $builder->orderBy('businesses.featured', 'DESC')
-                       ->orderBy('businesses.name_en', 'ASC')
+        if ($query !== null && trim((string)$query) !== '') {
+            $needle = trim((string)$query);
+            $builder->groupStart();
+            if ($locale === 'ur') {
+                $builder->like('businesses.name_ur', $needle)
+                        ->orLike('businesses.address_ur', $needle)
+                        ->orLike('businesses.description_ur', $needle)
+                        ->orLike('categories.name_ur', $needle)
+                        ->orLike('areas.name_ur', $needle)
+                        ->orLike('villages.name_ur', $needle)
+                        ->orLike('businesses.phone', $needle);
+            } else {
+                $builder->like('businesses.name_en', $needle)
+                        ->orLike('businesses.address_en', $needle)
+                        ->orLike('businesses.description_en', $needle)
+                        ->orLike('categories.name_en', $needle)
+                        ->orLike('areas.name_en', $needle)
+                        ->orLike('villages.name_en', $needle)
+                        ->orLike('businesses.phone', $needle);
+            }
+            $builder->groupEnd();
+        }
+
+        if ($perPage === null) {
+            $rows = $builder->orderBy('businesses.featured', 'DESC')
+                           ->orderBy("businesses.name_{$locale}", 'ASC')
+                           ->findAll();
+            return $this->localizedRows($rows);
+        }
+
+        $page = max(1, (int)$page);
+        $total = $builder->countAllResults(false);
+        $offset = ($page - 1) * $perPage;
+
+        $rows = $builder->orderBy('businesses.featured', 'DESC')
+                       ->orderBy("businesses.name_{$locale}", 'ASC')
+                       ->limit($perPage, $offset)
                        ->findAll();
+
+        return [
+            'businesses' => $this->localizedRows($rows),
+            'total'      => $total,
+            'page'       => $page,
+            'perPage'    => $perPage,
+            'totalPages' => (int) ceil($total / $perPage),
+        ];
+    }
+
+    public function getLocalizedBusiness($idOrSlug): ?array
+    {
+        if (empty($idOrSlug)) return null;
+
+        $builder = $this->baseQuery()->where('businesses.status', 'active');
+
+        if (is_numeric($idOrSlug)) {
+            $builder->where('businesses.id', (int) $idOrSlug);
+        } else {
+            $builder->where('businesses.slug', $idOrSlug);
+        }
+
+        $row = $builder->first();
+        if (!$row && is_string($idOrSlug) && ctype_digit($idOrSlug)) {
+            $row = $this->baseQuery()
+                        ->where('businesses.status', 'active')
+                        ->where('businesses.id', (int) $idOrSlug)
+                        ->first();
+        }
+
+        if (!$row) return null;
+        return $this->localizedRow($row);
+    }
+
+    private function baseQuery()
+    {
+        return $this->select('businesses.*, 
+                              categories.name_en as category_name_en, categories.name_ur as category_name_ur, categories.icon as category_icon,
+                              areas.name_en as area_name_en, areas.name_ur as area_name_ur,
+                              villages.name_en as village_name_en, villages.name_ur as village_name_ur')
+                    ->join('categories', 'categories.id = businesses.category_id', 'left')
+                    ->join('areas', 'areas.id = businesses.area_id', 'left')
+                    ->join('villages', 'villages.id = businesses.village_id', 'left');
+    }
+
+    private function locale(): string { return service('request')->getLocale() === 'ur' ? 'ur' : 'en'; }
+
+    private function localizedRows(array $rows): array
+    {
+        return array_values(array_map(fn (array $row) => $this->localizedRow($row), $rows));
+    }
+
+    private function localizedRow(array $row): array
+    {
+        $slugOrId = !empty($row['slug']) ? $row['slug'] : ($row['id'] ?? '');
+
+        // Address resolution: address_en / address_ur first, then legacy address
+        $addressVal = $this->localized($row, 'address');
+        if (empty($addressVal) && !empty($row['address'])) {
+            $addressVal = trim((string)$row['address']);
+        }
+
+        return $row + [
+            'display_name'          => $this->localized($row, 'name'),
+            'display_category_name' => $this->localized($row, 'category_name'),
+            'display_area_name'     => $this->localized($row, 'area_name'),
+            'display_village_name'  => $this->localized($row, 'village_name'),
+            'display_address'       => $addressVal,
+            'display_description'   => $this->localized($row, 'description'),
+            'url'                   => function_exists('base_url') ? base_url('listing/' . $slugOrId) : '/listing/' . $slugOrId,
+        ];
+    }
+
+    /**
+     * STRICT Localization method.
+     * ZERO cross-language fallback mixing!
+     */
+    private function localized(array $row, string $field): string
+    {
+        $lang = $this->locale();
+        return trim((string) ($row["{$field}_{$lang}"] ?? ''));
     }
 
     public function getCategoryCounts()
     {
-        return $this->select('category_id, COUNT(*) as total')
-                    ->where('status', 'active')
-                    ->groupBy('category_id')
+        return $this->select('businesses.category_id, categories.name_en, categories.name_ur, COUNT(businesses.id) as total')
+                    ->join('categories', 'categories.id = businesses.category_id', 'left')
+                    ->where('businesses.status', 'active')
+                    ->groupBy('businesses.category_id, categories.name_en, categories.name_ur')
                     ->findAll();
     }
 }

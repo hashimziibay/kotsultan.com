@@ -1,5 +1,5 @@
 <?php 
-    $currentLang = session('lang') ?? 'en';
+    $currentLang = service('request')->getLocale();
     $isRtl = ($currentLang === 'ur');
 ?>
 <!DOCTYPE html>
@@ -9,10 +9,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title ?? lang('App.brand_name') . ' - ' . lang('App.brand_tagline') ?></title>
     
-    <!-- Preload Local Urdu Font (Jameel Noori Nastaleeq) to prevent flickering -->
-    <?php if ($isRtl): ?>
-        <link rel="preload" href="<?= base_url('fonts/JameelNooriNastaleeq.woff') ?>" as="font" type="font/woff" crossorigin="anonymous">
-    <?php endif; ?>
 
     <!-- Google Fonts: Inter (English UI) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,6 +27,17 @@
 
     <!-- Click Spark Particle Effect -->
     <script defer src="<?= base_url('js/click-spark.js') ?>"></script>
+
+    <!-- Apply saved theme before first paint to avoid theme flash/inconsistency -->
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200 antialiased relative">
     

@@ -33,6 +33,7 @@
                 <ul class="space-y-2.5 text-sm font-medium">
                     <li><a href="<?= base_url('/') ?>" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"><?= lang('App.nav_home') ?></a></li>
                     <li><a href="<?= base_url('directory') ?>" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"><?= lang('App.nav_directory') ?></a></li>
+                    <li><a href="<?= base_url('emergency-numbers') ?>" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"><?= lang('App.nav_emergency') ?></a></li>
                     <li><a href="<?= base_url('wall-of-kot-sultan') ?>" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"><?= lang('App.nav_wall') ?></a></li>
                     <li><a href="<?= base_url('volunteer') ?>" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"><?= lang('App.nav_volunteer') ?></a></li>
                     <li><a href="<?= base_url('about') ?>" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"><?= lang('App.nav_about') ?></a></li>
@@ -68,10 +69,7 @@
                         <i data-lucide="mail" class="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0"></i>
                         <span>info@kotsultan.com</span>
                     </p>
-                    <p class="flex items-center gap-2">
-                        <i data-lucide="phone" class="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0"></i>
-                        <span dir="ltr">+92 305 6660169</span>
-                    </p>
+
                 </div>
             </div>
 

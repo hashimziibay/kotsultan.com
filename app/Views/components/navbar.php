@@ -1,15 +1,57 @@
 <?php 
-    $currentLang = session('lang') ?? 'en';
+    $currentLang = service('request')->getLocale();
     $isUrdu = ($currentLang === 'ur');
     
     // Automatic active route detection
     $currentPath = trim(uri_string(), '/');
-    $isHome      = ($currentPath === '' || $currentPath === 'home');
-    $isDirectory = ($currentPath === 'directory' || $currentPath === 'listings');
-    $isWall      = ($currentPath === 'wall-of-kot-sultan');
-    $isVolunteer = ($currentPath === 'volunteer');
-    $isAbout     = ($currentPath === 'about');
-    $isContact   = ($currentPath === 'contact');
+    if ($currentPath === '' || $currentPath === 'home') {
+        $currentPath = '/';
+    }
+
+    // Default Fallback Links (in case DB fails)
+    $navLinks = [
+        ['url' => '/', 'title_en' => lang('App.nav_home', [], 'en'), 'title_ur' => lang('App.nav_home', [], 'ur')],
+        ['url' => 'directory', 'title_en' => lang('App.nav_directory', [], 'en'), 'title_ur' => lang('App.nav_directory', [], 'ur')],
+        ['url' => 'emergency-numbers', 'title_en' => lang('App.nav_emergency', [], 'en'), 'title_ur' => lang('App.nav_emergency', [], 'ur')],
+        ['url' => 'wall-of-kot-sultan', 'title_en' => lang('App.nav_wall', [], 'en'), 'title_ur' => lang('App.nav_wall', [], 'ur')],
+        ['url' => 'volunteer', 'title_en' => lang('App.nav_volunteer', [], 'en'), 'title_ur' => lang('App.nav_volunteer', [], 'ur')],
+        ['url' => 'about', 'title_en' => lang('App.nav_about', [], 'en'), 'title_ur' => lang('App.nav_about', [], 'ur')],
+        ['url' => 'contact', 'title_en' => lang('App.nav_contact', [], 'en'), 'title_ur' => lang('App.nav_contact', [], 'ur')],
+    ];
+
+    try {
+        $db = \Config\Database::connect();
+        if ($db->tableExists('nav_links')) {
+            $dbLinks = $db->table('nav_links')
+                          ->where('status', 'active')
+                          ->orderBy('sort_order', 'ASC')
+                          ->get()
+                          ->getResultArray();
+            if (!empty($dbLinks)) {
+                $navLinks = $dbLinks;
+            }
+        }
+    } catch (\Throwable $e) {
+        // Silently catch and use fallbacks
+    }
+
+    $isLinkActive = function($url) use ($currentPath) {
+        $url = trim($url, '/');
+        if ($url === '') $url = '/';
+        
+        if ($currentPath === $url) return true;
+        
+        if ($url === 'directory' && (str_starts_with($currentPath, 'business/') || str_starts_with($currentPath, 'listing/') || $currentPath === 'listings')) {
+            return true;
+        }
+        if ($url === 'emergency-numbers' && $currentPath === 'emergency') {
+            return true;
+        }
+        if ($url === 'wall-of-kot-sultan' && str_starts_with($currentPath, 'wall-of-kot-sultan/')) {
+            return true;
+        }
+        return false;
+    };
 ?>
 <style>
 /* Direction-agnostic active indicator */
@@ -73,30 +115,16 @@
 
             <!-- Desktop Nav Links with Automatic Active Indicator -->
             <div class="hidden md:flex items-center gap-1 lg:gap-2">
-                <!-- Home -->
-                <a href="<?= base_url('/') ?>" class="relative px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 <?= $isHome ? 'nav-link-active text-orange-500 dark:text-orange-400 font-bold' : 'text-slate-700 dark:text-slate-200 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-                    <span><?= lang('App.nav_home') ?></span>
-                </a>
-                <!-- Directory -->
-                <a href="<?= base_url('directory') ?>" class="relative px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 <?= $isDirectory ? 'nav-link-active text-orange-500 dark:text-orange-400 font-bold' : 'text-slate-700 dark:text-slate-200 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-                    <span><?= lang('App.nav_directory') ?></span>
-                </a>
-                <!-- Wall -->
-                <a href="<?= base_url('wall-of-kot-sultan') ?>" class="relative px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 <?= $isWall ? 'nav-link-active text-orange-500 dark:text-orange-400 font-bold' : 'text-slate-700 dark:text-slate-200 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-                    <span><?= lang('App.nav_wall') ?></span>
-                </a>
-                <!-- Volunteer -->
-                <a href="<?= base_url('volunteer') ?>" class="relative px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 <?= $isVolunteer ? 'nav-link-active text-orange-500 dark:text-orange-400 font-bold' : 'text-slate-700 dark:text-slate-200 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-                    <span><?= lang('App.nav_volunteer') ?></span>
-                </a>
-                <!-- About -->
-                <a href="<?= base_url('about') ?>" class="relative px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 <?= $isAbout ? 'nav-link-active text-orange-500 dark:text-orange-400 font-bold' : 'text-slate-700 dark:text-slate-200 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-                    <span><?= lang('App.nav_about') ?></span>
-                </a>
-                <!-- Contact -->
-                <a href="<?= base_url('contact') ?>" class="relative px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 <?= $isContact ? 'nav-link-active text-orange-500 dark:text-orange-400 font-bold' : 'text-slate-700 dark:text-slate-200 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-                    <span><?= lang('App.nav_contact') ?></span>
-                </a>
+                <?php foreach ($navLinks as $link): ?>
+                    <?php 
+                        $isActive = $isLinkActive($link['url']);
+                        $linkTitle = $isUrdu ? $link['title_ur'] : $link['title_en'];
+                        $href = base_url($link['url'] === '/' ? '' : ltrim($link['url'], '/'));
+                    ?>
+                    <a href="<?= $href ?>" class="relative px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 <?= $isActive ? 'nav-link-active text-orange-500 dark:text-orange-400 font-bold' : 'text-slate-700 dark:text-slate-200 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
+                        <span><?= esc($linkTitle) ?></span>
+                    </a>
+                <?php endforeach; ?>
             </div>
 
             <!-- Controls: Language Switcher & Dark Mode Toggle -->
@@ -135,10 +163,10 @@
                          x-transition
                          class="absolute end-0 mt-2 w-32 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg py-1 z-50">
                         <a href="<?= base_url('lang/en') ?>" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-start flex-row rtl:flex-row-reverse">
-                            <span>English (EN)</span>
+                            <span><?= lang('App.english_en') ?></span>
                         </a>
                         <a href="<?= base_url('lang/ur') ?>" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-sans text-start flex-row rtl:flex-row-reverse">
-                            <span>اردو (Original)</span>
+                            <span><?= lang('App.urdu_ur') ?></span>
                         </a>
                     </div>
                 </div>
@@ -164,46 +192,18 @@
          x-transition:leave-end="opacity-0 -translate-y-2"
          class="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pt-2 pb-4 space-y-1 relative z-20 text-start">
         
-        <a href="<?= base_url('/') ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold transition-all duration-200 <?= $isHome ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold border-s-4 border-orange-500 dark:border-orange-400' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-            <span><?= lang('App.nav_home') ?></span>
-            <?php if ($isHome): ?>
-                <span class="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400 flex-shrink-0"></span>
-            <?php endif; ?>
-        </a>
-
-        <a href="<?= base_url('directory') ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold transition-all duration-200 <?= $isDirectory ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold border-s-4 border-orange-500 dark:border-orange-400' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-            <span><?= lang('App.nav_directory') ?></span>
-            <?php if ($isDirectory): ?>
-                <span class="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400 flex-shrink-0"></span>
-            <?php endif; ?>
-        </a>
-
-        <a href="<?= base_url('wall-of-kot-sultan') ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold transition-all duration-200 <?= $isWall ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold border-s-4 border-orange-500 dark:border-orange-400' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-            <span><?= lang('App.nav_wall') ?></span>
-            <?php if ($isWall): ?>
-                <span class="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400 flex-shrink-0"></span>
-            <?php endif; ?>
-        </a>
-
-        <a href="<?= base_url('volunteer') ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold transition-all duration-200 <?= $isVolunteer ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold border-s-4 border-orange-500 dark:border-orange-400' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-            <span><?= lang('App.nav_volunteer') ?></span>
-            <?php if ($isVolunteer): ?>
-                <span class="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400 flex-shrink-0"></span>
-            <?php endif; ?>
-        </a>
-
-        <a href="<?= base_url('about') ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold transition-all duration-200 <?= $isAbout ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold border-s-4 border-orange-500 dark:border-orange-400' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-            <span><?= lang('App.nav_about') ?></span>
-            <?php if ($isAbout): ?>
-                <span class="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400 flex-shrink-0"></span>
-            <?php endif; ?>
-        </a>
-
-        <a href="<?= base_url('contact') ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold transition-all duration-200 <?= $isContact ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold border-s-4 border-orange-500 dark:border-orange-400' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-            <span><?= lang('App.nav_contact') ?></span>
-            <?php if ($isContact): ?>
-                <span class="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400 flex-shrink-0"></span>
-            <?php endif; ?>
-        </a>
+        <?php foreach ($navLinks as $link): ?>
+            <?php 
+                $isActive = $isLinkActive($link['url']);
+                $linkTitle = $isUrdu ? $link['title_ur'] : $link['title_en'];
+                $href = base_url($link['url'] === '/' ? '' : ltrim($link['url'], '/'));
+            ?>
+            <a href="<?= $href ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold transition-all duration-200 <?= $isActive ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold border-s-4 border-orange-500 dark:border-orange-400' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
+                <span><?= esc($linkTitle) ?></span>
+                <?php if ($isActive): ?>
+                    <span class="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400 flex-shrink-0"></span>
+                <?php endif; ?>
+            </a>
+        <?php endforeach; ?>
     </div>
 </nav>

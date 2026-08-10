@@ -27,9 +27,23 @@ class CategoryModel extends Model
 
     public function getActiveCategories()
     {
-        return $this->where('status', 'active')
+        $locale = $this->locale();
+        $rows = $this->where('status', 'active')
                     ->orderBy('display_order', 'ASC')
-                    ->orderBy('name_en', 'ASC')
+                    ->orderBy("name_{$locale}", 'ASC')
                     ->findAll();
+        return array_map(function (array $row) {
+            $slugOrId = !empty($row['slug']) ? $row['slug'] : $row['id'];
+            return $row + [
+                'display_name' => $this->localized($row, 'name'),
+                'url'          => function_exists('base_url') ? base_url('directory?category=' . $slugOrId) : '/directory?category=' . $slugOrId,
+            ];
+        }, $rows);
+    }
+
+    private function locale(): string { return service('request')->getLocale() === 'ur' ? 'ur' : 'en'; }
+    private function localized(array $row, string $field): string
+    {
+        return trim((string) ($row["{$field}_{$this->locale()}"] ?? ''));
     }
 }

@@ -19,7 +19,7 @@
                 Kot Sultan<span class="text-emerald-400">.com</span>
             </h1>
             <p class="text-sm text-slate-200 dark:text-slate-300 leading-relaxed">
-                Official local community directory for Kot Sultan, Pakistan. Sign in to manage directory listings and community information.
+                <?= lang('App.login_branding_text') ?>
             </p>
         </div>
     </div>
@@ -30,8 +30,8 @@
         <div class="w-full max-w-md relative z-10">
             
             <div class="mb-8">
-                <h2 class="blur-reveal text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-1">Directory Login</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Enter your credentials to access your account</p>
+                <h2 class="blur-reveal text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-1"><?= lang('App.login_title') ?></h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400"><?= lang('App.brand_tagline') ?></p>
             </div>
 
             <!-- Login Form -->
@@ -40,22 +40,22 @@
                     
                     <!-- Email -->
                     <div class="space-y-1.5">
-                        <label for="email" class="block text-xs font-bold text-slate-900 dark:text-white">Email Address</label>
+                        <label for="email" class="block text-xs font-bold text-slate-900 dark:text-white"><?= lang('App.email_address') ?></label>
                         <div class="relative">
                             <i data-lucide="mail" class="absolute left-3.5 rtl:right-3.5 rtl:left-auto top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
                             <input type="email" id="email" placeholder="hello@example.com" class="w-full pl-10 rtl:pr-10 rtl:pl-3 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-600">
                         </div>
                     </div>
 
-                    <!-- Password -->
+                    <!-- <?= lang('App.password') ?> -->
                     <div class="space-y-1.5">
                         <div class="flex items-center justify-between">
-                            <label for="password" class="block text-xs font-bold text-slate-900 dark:text-white">Password</label>
-                            <a href="#" class="text-xs font-bold text-emerald-600 hover:underline">Forgot password?</a>
+                            <label for="password" class="block text-xs font-bold text-slate-900 dark:text-white"><?= lang('App.password') ?></label>
+                            <a href="#" class="text-xs font-bold text-emerald-600 hover:underline"><?= lang('App.forgot_password') ?></a>
                         </div>
                         <div class="relative" x-data="{ show: false }">
                             <i data-lucide="lock" class="absolute left-3.5 rtl:right-3.5 rtl:left-auto top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-                            <input :type="show ? 'text' : 'password'" id="password" placeholder="••••••••" class="w-full pl-10 rtl:pr-10 rtl:pl-3 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-600">
+                            <input type="password" :type="show ? 'text' : 'password'" id="password" placeholder="••••••••" class="w-full pl-10 rtl:pr-10 rtl:pl-3 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-600">
                             <button type="button" @click="show = !show" class="absolute right-3.5 rtl:left-3.5 rtl:right-auto top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                                 <i data-lucide="eye" x-show="!show" class="w-4 h-4"></i>
                                 <i data-lucide="eye-off" x-show="show" x-cloak class="w-4 h-4"></i>
@@ -65,14 +65,14 @@
 
                     <!-- Submit Button -->
                     <button type="submit" class="w-full btn btn-lg btn-primary">
-                        <span>Sign In</span>
+                        <span><?= lang('App.sign_in') ?></span>
                         <i data-lucide="arrow-right" class="w-4 h-4"></i>
                     </button>
                 </form>
             </div>
 
             <p class="text-center text-xs font-medium text-slate-500 dark:text-slate-400 mt-6">
-                Need help logging in? Contact directory administration at <span class="font-bold text-slate-700 dark:text-slate-200">info@kotsultan.com</span>
+                <?= lang('App.login_need_help') ?> <span class="font-bold text-slate-700 dark:text-slate-200" dir="ltr">info@kotsultan.com</span>
             </p>
         </div>
     </div>

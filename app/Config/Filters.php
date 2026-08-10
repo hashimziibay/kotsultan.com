@@ -34,6 +34,8 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
+        'adminAuth'     => \App\Filters\AdminAuthFilter::class,
+        'locale'        => \App\Filters\LocaleFilter::class,
     ];
 
     /**
@@ -72,6 +74,7 @@ class Filters extends BaseFilters
      */
     public array $globals = [
         'before' => [
+            'locale',
             // 'honeypot',
             // 'csrf',
             // 'invalidchars',

@@ -18,6 +18,17 @@
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Apply saved theme before first paint to avoid theme flash/inconsistency -->
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body class="bg-background text-textMain min-h-screen font-sans transition-colors duration-300">
 
@@ -38,8 +49,12 @@
             Alpine.data('themeHandler', () => ({
                 darkMode: false,
                 init() {
-                    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    // Light default: only go dark when the user explicitly chose dark.
+                    if (localStorage.getItem('theme') === 'dark') {
                         this.darkMode = true;
+                    } else {
+                        this.darkMode = false;
+                        localStorage.setItem('theme', 'light');
                     }
                     
                     this.$watch('darkMode', value => {

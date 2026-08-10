@@ -8,12 +8,14 @@
     <div>
         <!-- Photo Header -->
         <div class="relative h-44 bg-slate-100 dark:bg-slate-700 overflow-hidden">
-            <img src="<?= !empty($item['image']) ? $item['image'] : 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&q=80&w=600' ?>" 
-                 alt="<?= $isUrdu ? esc($item['name_ur']) : esc($item['name_en']) ?>" 
+            <?php $cardImage = get_business_image_url($item['image'] ?? ''); ?>
+            <img src="<?= esc($cardImage) ?>" 
+                 onerror="this.onerror=null;this.src='<?= esc('https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&q=80&w=600') ?>';"
+                 alt="<?= esc($item['display_name']) ?>" 
                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
             <div class="absolute top-3 left-3 rtl:left-auto rtl:right-3">
                 <span class="px-2.5 py-1 rounded-md bg-slate-900/80 text-white text-xs font-bold uppercase tracking-wider backdrop-blur-xs">
-                    <?= $isUrdu ? esc($item['category_name_ur']) : esc($item['category_name_en']) ?>
+                    <?= render_localized_text($item['display_category_name']) ?>
                 </span>
             </div>
         </div>
@@ -21,19 +23,21 @@
         <!-- Business Details -->
         <div class="p-5 space-y-2">
             <h3 class="text-lg font-bold text-slate-900 dark:text-white leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                <?= $isUrdu ? esc($item['name_ur']) : esc($item['name_en']) ?>
+                <a href="<?= esc($item['url'] ?? base_url('listing/' . (!empty($item['slug']) ? $item['slug'] : $item['id']))) ?>">
+                    <?= render_localized_text($item['display_name']) ?>
+                </a>
             </h3>
             
             <?php if (!empty($item['owner_name'])): ?>
             <p class="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                 <i data-lucide="user" class="w-3.5 h-3.5 text-slate-400"></i>
-                <span><?= lang('App.owner') ?>: <?= esc($item['owner_name']) ?></span>
+                <span><?= lang('App.owner') ?>: <?= render_localized_text($item['owner_name']) ?></span>
             </p>
             <?php endif; ?>
 
             <p class="text-xs text-slate-600 dark:text-slate-300 flex items-start gap-1.5">
                 <i data-lucide="map-pin" class="w-3.5 h-3.5 text-emerald-600 mt-0.5 flex-shrink-0"></i>
-                <span class="line-clamp-2"><?= esc($item['address']) ?></span>
+                <span class="line-clamp-2"><?= render_localized_text($item['display_address']) ?></span>
             </p>
 
             <?php if (!empty($item['phone'])): ?>
@@ -58,7 +62,7 @@
             <span><?= lang('App.whatsapp') ?></span>
         </a>
         <?php else: ?>
-        <a href="<?= base_url('business') ?>" class="btn btn-sm btn-secondary">
+        <a href="<?= esc($item['url'] ?? base_url('listing/' . (!empty($item['slug']) ? $item['slug'] : $item['id']))) ?>" class="btn btn-sm btn-secondary">
             <i data-lucide="eye" class="w-3.5 h-3.5"></i>
             <span><?= lang('App.view_details') ?></span>
         </a>

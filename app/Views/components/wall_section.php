@@ -44,7 +44,7 @@ $displayEntries = ($mode === 'preview') ? array_slice($wallEntries ?? [], 0, 6) 
                     <div class="w-80 md:w-auto bg-slate-50/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200/90 dark:border-slate-700 p-8 flex flex-col items-center text-center backdrop-blur-xs transition-all duration-300 transform hover:-translate-y-1.5 hover:shadow-xl hover:border-emerald-500/50">
                         <div class="relative mb-6">
                             <img src="<?= !empty($person['photo']) ? esc($person['photo']) : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300' ?>" 
-                                 alt="<?= $isUrdu ? esc($person['name_ur']) : esc($person['name_en']) ?>" 
+                                 alt="<?= esc($person['display_name']) ?>" 
                                  class="w-28 h-28 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-md">
                             <span class="absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs shadow-xs">
                                 <i data-lucide="check" class="w-4 h-4"></i>
@@ -52,7 +52,7 @@ $displayEntries = ($mode === 'preview') ? array_slice($wallEntries ?? [], 0, 6) 
                         </div>
                         
                         <h3 class="text-xl font-extrabold text-slate-900 dark:text-white mb-1">
-                            <?= $isUrdu ? esc($person['name_ur']) : esc($person['name_en']) ?>
+                            <?= esc($person['display_name']) ?>
                         </h3>
                         
                         <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-4">
@@ -60,7 +60,7 @@ $displayEntries = ($mode === 'preview') ? array_slice($wallEntries ?? [], 0, 6) 
                         </span>
                         
                         <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal line-clamp-4">
-                            <?= $isUrdu ? esc($person['intro_ur']) : esc($person['intro_en']) ?>
+                            <?= esc($person['display_intro']) ?>
                         </p>
                     </div>
                     <?php endforeach; ?>
@@ -99,7 +99,7 @@ $displayEntries = ($mode === 'preview') ? array_slice($wallEntries ?? [], 0, 6) 
                 <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 dark:border-slate-700 p-8 flex flex-col items-center text-center shadow-xs transition-all duration-300 transform hover:-translate-y-1.5 hover:shadow-xl hover:border-emerald-500/50">
                     <div class="relative mb-6">
                         <img src="<?= !empty($person['photo']) ? esc($person['photo']) : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300' ?>" 
-                             alt="<?= $isUrdu ? esc($person['name_ur']) : esc($person['name_en']) ?>" 
+                             alt="<?= esc($person['display_name']) ?>" 
                              class="w-28 h-28 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-md">
                         <span class="absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs shadow-xs">
                             <i data-lucide="check" class="w-4 h-4"></i>
@@ -107,7 +107,7 @@ $displayEntries = ($mode === 'preview') ? array_slice($wallEntries ?? [], 0, 6) 
                     </div>
                     
                     <h3 class="text-xl font-extrabold text-slate-900 dark:text-white mb-1">
-                        <?= $isUrdu ? esc($person['name_ur']) : esc($person['name_en']) ?>
+                        <?= esc($person['display_name']) ?>
                     </h3>
                     
                     <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-4">
@@ -115,7 +115,7 @@ $displayEntries = ($mode === 'preview') ? array_slice($wallEntries ?? [], 0, 6) 
                     </span>
                     
                     <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
-                        <?= $isUrdu ? esc($person['intro_ur']) : esc($person['intro_en']) ?>
+                        <?= esc($person['display_intro']) ?>
                     </p>
                 </div>
                 <?php endforeach; ?>
