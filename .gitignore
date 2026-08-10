@@ -133,9 +133,5 @@ node_modules
 .env
 .env.production
 
-# Large uploaded business images (deploy via FTP/SFTP, not git)
-/public/uploads/
-!/public/uploads/index.html
-
 # Local DB dump for server import
 /database-export.sql
