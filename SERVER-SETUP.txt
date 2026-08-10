@@ -1,0 +1,111 @@
+KotSultan.com — StackCP fix (403 / site not working)
+====================================================
+
+Live checks showed:
+  https://kotsultan.com/        -> 403 Forbidden
+  /public/ and index.php        -> 403 / 503
+
+That almost always means one of these on StackCP:
+
+1) Wrong document root / incomplete upload
+2) Missing vendor/ folder (now in GitHub — re-download latest)
+3) Missing .env on the server (upload .env.production renamed to .env)
+4) PHP version older than 8.2
+5) writable/ folders not writable
+
+
+A. RECOMMENDED FOLDER LAYOUT ON STACKCP
+---------------------------------------
+Put the FULL project here (example):
+
+  /kotsultan.com/          (or your hosting package folder)
+    app/
+    public/                <--- set DOCUMENT ROOT to this folder
+    vendor/                <--- REQUIRED (upload from your PC)
+    writable/
+    .env                   <--- copy from .env.production
+    composer.json
+    spark
+
+In StackCP:
+  Manage Hosting -> Websites -> kotsultan.com
+  -> Website settings / Document root
+  -> set to: .../public
+
+
+B. IF YOU CANNOT CHANGE DOCUMENT ROOT
+-------------------------------------
+Upload the full project into public_html so it looks like:
+
+  public_html/
+    app/
+    public/
+    vendor/
+    writable/
+    .env
+    index.php          (already added at project root)
+    .htaccess          (routes into /public)
+
+Then open:
+  https://kotsultan.com/health.php
+
+
+C. REQUIRED FILES TO UPLOAD
+---------------------------
+Easiest: download latest from GitHub (hashimziibay/kotsultan.com)
+and upload the full project, PLUS:
+
+  [ ] .env   << copy from your local .env.production and rename to .env
+                (.env is NOT in GitHub — secrets stay private)
+
+If using Git clone / ZIP from GitHub you already get:
+  app/, public/, vendor/, writable/, index.php, .htaccess, etc.
+
+
+D. IF vendor/ IS MISSING ON SERVER
+----------------------------------
+On your PC in D:\wamp\www\kts:
+
+  php composer.phar install --no-dev --optimize-autoloader
+
+Then upload the whole vendor/ folder with FTP/SFTP.
+Or pull the latest GitHub commit that includes vendor/.
+
+
+E. PHP VERSION
+--------------
+StackCP -> Manage Hosting -> PHP Configuration
+Set domain kotsultan.com to PHP 8.2 or 8.3
+
+
+F. PERMISSIONS
+--------------
+writable/ and all subfolders must be writable (usually 775 or 755).
+
+
+G. DATABASE
+-----------
+1. Export local DB with export-database-for-server.bat
+2. In SQL, change USE `kts`; to USE `wordpress-35303337d41d`;
+3. Import into StackCP phpMyAdmin database wordpress-35303337d41d
+4. Confirm .env has:
+     database.default.hostname = sdb-64.hosting.stackcp.net
+     database.default.database = wordpress-35303337d41d
+     database.default.username = wordpress-35303337d41d
+     database.default.password = kotsultan12_12
+
+
+H. VERIFY
+---------
+1. https://kotsultan.com/health.php
+   Every line should say [OK]
+2. https://kotsultan.com/
+3. https://kotsultan.com/api/home
+4. Delete public/health.php after it works
+
+
+I. COMMON 403 CAUSE
+-------------------
+Document root pointed at an empty folder, or at project root without
+index.php / without public/ uploaded. Set docroot to /public or upload
+the root index.php + .htaccess included in this update.

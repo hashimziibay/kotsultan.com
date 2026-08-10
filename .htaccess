@@ -1,5 +1,20 @@
+# StackCP / shared hosting — route everything into CodeIgniter's public folder
+# when document root is the project root.
+
+DirectoryIndex index.php index.html
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # If request is already inside /public, do nothing special.
+    RewriteRule ^public/ - [L]
+
+    # Send everything else into public/
     RewriteRule ^$ public/ [L]
-    RewriteRule (.*) public/$1 [L]
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Deny direct access to sensitive folders if docroot is project root
+<IfModule mod_authz_core.c>
+    RedirectMatch 403 ^/(app|writable|tests|vendor|mobileapp)/
 </IfModule>

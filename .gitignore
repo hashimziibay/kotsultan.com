@@ -85,7 +85,9 @@ php_errors.log
 #-------------------------
 # Composer
 #-------------------------
-vendor/
+# Keep vendor tracked for shared-hosting deploys (no Composer SSH).
+# vendor/
+vendor.zip
 
 #-------------------------
 # IDE / Development Files
