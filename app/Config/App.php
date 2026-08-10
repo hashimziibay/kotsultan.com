@@ -22,29 +22,68 @@ class App extends BaseConfig
     {
         parent::__construct();
 
+        // Prefer explicit app.baseURL from .env (do not overwrite with /public detection).
+        $configured = env('app.baseURL');
+        if (is_string($configured) && trim($configured) !== '') {
+            $this->baseURL = $this->normalizeBaseURL($configured);
+            return;
+        }
+
         // Dynamically detect base URL from incoming HTTP request headers for LAN IP & production compatibility
-        if (isset($_SERVER['HTTP_HOST'])) {
-            $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-                || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
-                || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+        if (! isset($_SERVER['HTTP_HOST'])) {
+            return;
+        }
 
-            $scheme = $isSecure ? 'https://' : 'http://';
-            $host   = $_SERVER['HTTP_HOST'];
+        $isSecure = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+            || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
 
-            // Extract script directory path (handles subfolders with spaces like /kts%20web%20project/public/ or domain root)
-            $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-            $dirName    = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+        $scheme = $isSecure ? 'https://' : 'http://';
+        $host   = $_SERVER['HTTP_HOST'];
 
-            if ($dirName && $dirName !== '/') {
-                $segments = explode('/', $dirName);
-                $encoded  = array_map(static fn($s) => rawurlencode(rawurldecode($s)), $segments);
-                $path     = implode('/', $encoded) . '/';
-            } else {
+        // Extract script directory path (handles subfolders with spaces like /kts%20web%20project/public/ or domain root)
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $dirName    = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+
+        if ($dirName && $dirName !== '/') {
+            $segments = explode('/', $dirName);
+            $encoded  = array_map(static fn ($s) => rawurlencode(rawurldecode($s)), $segments);
+            $path     = implode('/', $encoded) . '/';
+        } else {
+            $path = '/';
+        }
+
+        // Shared-hosting bootstrap runs public/index.php while the public URL
+        // should stay at the site root (no "/public" in links/slugs).
+        $path = preg_replace('#/public/$#i', '/', $path) ?: '/';
+
+        $this->baseURL = $this->normalizeBaseURL($scheme . $host . $path);
+    }
+
+    /**
+     * Ensure trailing slash and strip a trailing /public segment from production-style roots.
+     */
+    private function normalizeBaseURL(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '/';
+        }
+
+        // Keep local WAMP paths like /kts/public/ intact when they are intentional.
+        // Only strip "/public" when it is the first path segment on a domain root
+        // (e.g. https://kotsultan.com/public/ → https://kotsultan.com/).
+        $parts = parse_url($url);
+        if (is_array($parts) && isset($parts['scheme'], $parts['host'])) {
+            $path = $parts['path'] ?? '/';
+            if (preg_match('#^/public/?$#i', $path)) {
                 $path = '/';
             }
-
-            $this->baseURL = $scheme . $host . $path;
+            $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+            $url  = $parts['scheme'] . '://' . $parts['host'] . $port . $path;
         }
+
+        return rtrim($url, '/') . '/';
     }
 
     /**
@@ -69,7 +108,7 @@ class App extends BaseConfig
      * something else. If you have configured your web server to remove this file
      * from your site URIs, set this variable to an empty string.
      */
-    public string $indexPage = 'index.php';
+    public string $indexPage = '';
 
     /**
      * --------------------------------------------------------------------------

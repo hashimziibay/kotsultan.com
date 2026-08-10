@@ -89,6 +89,8 @@ G. DATABASE
 2. In SQL, change USE `kts`; to USE `wordpress-35303337d41d`;
 3. Import into StackCP phpMyAdmin database wordpress-35303337d41d
 4. Confirm .env has:
+     app.baseURL = https://kotsultan.com/
+     (NO /public/ in baseURL — links must be /listing/... not /public/listing/...)
      database.default.hostname = sdb-64.hosting.stackcp.net
      database.default.database = wordpress-35303337d41d
      database.default.username = wordpress-35303337d41d
