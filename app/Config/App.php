@@ -22,6 +22,20 @@ class App extends BaseConfig
     {
         parent::__construct();
 
+        $host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+        $host = preg_replace('/:\d+$/', '', $host) ?: '';
+
+        // Production domain: never allow /public in generated links.
+        if ($host !== '' && preg_match('/(^|\.)kotsultan\.com$/', $host)) {
+            $isSecure = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+                || (isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443');
+            $scheme         = $isSecure ? 'https://' : 'http://';
+            $this->baseURL  = $scheme . $host . '/';
+            $this->indexPage = '';
+            return;
+        }
+
         // Prefer explicit app.baseURL from .env (do not overwrite with /public detection).
         $configured = env('app.baseURL');
         if (is_string($configured) && trim($configured) !== '') {
@@ -30,7 +44,7 @@ class App extends BaseConfig
         }
 
         // Dynamically detect base URL from incoming HTTP request headers for LAN IP & production compatibility
-        if (! isset($_SERVER['HTTP_HOST'])) {
+        if ($host === '') {
             return;
         }
 
@@ -39,7 +53,6 @@ class App extends BaseConfig
             || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
 
         $scheme = $isSecure ? 'https://' : 'http://';
-        $host   = $_SERVER['HTTP_HOST'];
 
         // Extract script directory path (handles subfolders with spaces like /kts%20web%20project/public/ or domain root)
         $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
@@ -66,6 +79,7 @@ class App extends BaseConfig
     private function normalizeBaseURL(string $url): string
     {
         $url = trim($url);
+        $url = trim($url, " \t\n\r\0\x0B'\"");
         if ($url === '') {
             return '/';
         }
@@ -76,8 +90,11 @@ class App extends BaseConfig
         $parts = parse_url($url);
         if (is_array($parts) && isset($parts['scheme'], $parts['host'])) {
             $path = $parts['path'] ?? '/';
-            if (preg_match('#^/public/?$#i', $path)) {
-                $path = '/';
+            if (preg_match('#^/public(/|$)#i', $path)) {
+                $path = preg_replace('#^/public#i', '', $path) ?: '/';
+                if ($path === '' || $path[0] !== '/') {
+                    $path = '/' . ltrim($path, '/');
+                }
             }
             $port = isset($parts['port']) ? ':' . $parts['port'] : '';
             $url  = $parts['scheme'] . '://' . $parts['host'] . $port . $path;

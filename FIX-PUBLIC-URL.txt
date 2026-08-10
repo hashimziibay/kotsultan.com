@@ -1,0 +1,29 @@
+FIX: remove /public from live URLs
+=================================
+
+Live links still show https://kotsultan.com/public/... because the
+SERVER still has the old files / wrong .env.
+
+Upload these files NOW via StackCP File Manager or FTP:
+
+1) app/Config/App.php
+2) public/index.php
+3) .htaccess          (project root, next to app/ and public/)
+
+Then edit server .env (project root) and set EXACTLY:
+
+app.baseURL = 'https://kotsultan.com/'
+
+NOT:
+app.baseURL = 'https://kotsultan.com/public/'
+
+Optional but recommended:
+- Delete everything inside writable/cache/
+- In StackCP, set document root to the /public folder if available
+
+After upload, hard-refresh:
+https://kotsultan.com/
+
+Links must look like:
+https://kotsultan.com/directory/...
+https://kotsultan.com/listing/...

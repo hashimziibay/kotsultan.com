@@ -38,6 +38,22 @@ if (getcwd() . DIRECTORY_SEPARATOR !== FCPATH) {
 }
 
 /*
+ * Force clean production base URL (never include /public in links).
+ * Runs before CodeIgniter boots so .env mistakes cannot leak /public into URLs.
+ */
+$hostHeader = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+$hostHeader = preg_replace('/:\d+$/', '', $hostHeader) ?: '';
+if ($hostHeader !== '' && preg_match('/(^|\.)kotsultan\.com$/', $hostHeader)) {
+    $isHttps = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+        || (isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443');
+    $forcedBase = ($isHttps ? 'https://' : 'http://') . $hostHeader . '/';
+    putenv('app.baseURL=' . $forcedBase);
+    $_ENV['app.baseURL']    = $forcedBase;
+    $_SERVER['app.baseURL'] = $forcedBase;
+}
+
+/*
  *---------------------------------------------------------------
  * BOOTSTRAP THE APPLICATION
  *---------------------------------------------------------------
