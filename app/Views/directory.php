@@ -70,12 +70,14 @@
                     
                     <?php foreach ($categories as $cat): ?>
                         <?php 
-                            $isActive = ($selectedCategory == $cat['id']);
+                            $isActive = ((string) $selectedCategory === (string) $cat['id']);
                             $catCount = $categoryTotals[$cat['id']] ?? 0;
-                            $queryStr = '?category=' . $cat['id'];
-                            if (!empty($searchQuery)) $queryStr .= '&q=' . urlencode($searchQuery);
+                            $catUrl = $cat['url'] ?? base_url('directory/' . ($cat['seo_slug'] ?? $cat['slug']));
+                            if (!empty($searchQuery)) {
+                                $catUrl .= (str_contains($catUrl, '?') ? '&' : '?') . 'q=' . urlencode($searchQuery);
+                            }
                         ?>
-                        <a href="<?= base_url('directory' . $queryStr) ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors <?= $isActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent' ?>">
+                        <a href="<?= esc($catUrl) ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors <?= $isActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent' ?>">
                             <div class="flex items-center gap-3">
                                 <i data-lucide="<?= !empty($cat['icon']) ? $cat['icon'] : 'folder' ?>" class="w-4.5 h-4.5 <?= $isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' ?>"></i>
                                 <span><?= esc($cat['display_name']) ?></span>
@@ -102,11 +104,16 @@
                     <!-- Search Section -->
                     <div class="p-5 border-b border-slate-100 dark:border-slate-700/50" dir="<?= $isUrdu ? 'rtl' : 'ltr' ?>">
                         <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4"><?= lang('App.search_button') ?></h3>
-                        <form action="<?= base_url('directory') ?>" method="GET" class="flex flex-col gap-3">
-                            <?php if (!empty($selectedCategory)): ?>
-                                <input type="hidden" name="category" value="<?= esc($selectedCategory) ?>">
-                            <?php endif; ?>
-                            
+                        <?php
+                            $searchAction = base_url('directory');
+                            foreach ($categories as $c) {
+                                if ((string) $selectedCategory === (string) $c['id']) {
+                                    $searchAction = $c['url'] ?? $searchAction;
+                                    break;
+                                }
+                            }
+                        ?>
+                        <form action="<?= esc($searchAction) ?>" method="GET" class="flex flex-col gap-3">
                             <div class="relative">
                                 <i data-lucide="search" class="search-field-icon w-5 h-5 text-slate-400 absolute top-1/2 -translate-y-1/2 pointer-events-none"></i>
                                 <input type="text" 
@@ -148,12 +155,14 @@
                             
                             <?php foreach ($categories as $cat): ?>
                                 <?php 
-                                    $isActive = ($selectedCategory == $cat['id']);
+                                    $isActive = ((string) $selectedCategory === (string) $cat['id']);
                                     $catCount = $categoryTotals[$cat['id']] ?? 0;
-                                    $queryStr = '?category=' . $cat['id'];
-                                    if (!empty($searchQuery)) $queryStr .= '&q=' . urlencode($searchQuery);
+                                    $catUrl = $cat['url'] ?? base_url('directory/' . ($cat['seo_slug'] ?? $cat['slug']));
+                                    if (!empty($searchQuery)) {
+                                        $catUrl .= (str_contains($catUrl, '?') ? '&' : '?') . 'q=' . urlencode($searchQuery);
+                                    }
                                 ?>
-                                <a href="<?= base_url('directory' . $queryStr) ?>" class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 <?= $isActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent' ?>">
+                                <a href="<?= esc($catUrl) ?>" class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 <?= $isActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent' ?>">
                                     <div class="flex items-center gap-3">
                                         <i data-lucide="<?= !empty($cat['icon']) ? $cat['icon'] : 'folder' ?>" class="w-4.5 h-4.5 <?= $isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' ?>"></i>
                                         <span class="text-[15px]"><?= esc($cat['display_name']) ?></span>

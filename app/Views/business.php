@@ -13,6 +13,7 @@
             <div class="relative h-64 sm:h-80 bg-slate-100 dark:bg-slate-700 overflow-hidden">
                 <?php $detailImage = get_business_image_url($business['image'] ?? ''); ?>
                 <img src="<?= esc($detailImage) ?>" 
+                     loading="eager" decoding="async"
                      onerror="this.onerror=null;this.src='<?= esc('https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&q=80&w=600') ?>';"
                      alt="<?= esc($business['display_name'] ?? '') ?>" class="w-full h-full object-cover">
                 <div class="absolute top-4 left-4 rtl:left-auto rtl:right-4">

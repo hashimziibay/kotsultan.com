@@ -70,8 +70,7 @@ class Home extends BaseController
         $categoryModel = new CategoryModel();
         $businessModel = new BusinessModel();
 
-        $allCategories    = $categoryModel->getActiveCategories();
-        $recentBusinesses = $businessModel->getRecentBusinesses(18);
+        $allCategories = $categoryModel->getActiveCategories();
 
         // Compute dynamic directory statistics from database
         $categoryCounts = $businessModel->getCategoryCounts();
@@ -123,7 +122,7 @@ class Home extends BaseController
             $finalRecent[] = $bismillahStore;
         }
 
-        $recentPool = $businessModel->getRecentBusinesses(20);
+        $recentPool = $businessModel->getRecentBusinesses(8);
         $otherRecent = [];
         
         foreach ($recentPool as $bus) {
@@ -139,25 +138,42 @@ class Home extends BaseController
 
         return view('home', [
             'lang'              => $lang,
-            'categories'        => $allCategories,      // All categories for other uses if needed
-            'popularCategories' => $popularCategories, // Only 6 for the homepage section
-            'recentBusinesses'  => $finalRecent,       // Only 3 for the homepage section
+            'title'             => lang('App.brand_name') . ' - ' . lang('App.brand_tagline'),
+            'metaDescription'   => lang('App.about_text'),
+            'categories'        => $allCategories,
+            'popularCategories' => $popularCategories,
+            'recentBusinesses'  => $finalRecent,
             'wallEntries'       => [],
             'stats'             => $stats,
         ]);
     }
 
-    public function directory()
+    public function directory($categorySlug = null)
     {
         $lang = service('request')->getLocale();
+        helper('seo');
 
         $categoryModel = new CategoryModel();
         $businessModel = new BusinessModel();
-        $tagModel      = new TagModel();
 
         $query      = $this->request->getGet('q');
         $categoryId = $this->request->getGet('category');
         $tagId      = $this->request->getGet('tag');
+
+        if ($categorySlug) {
+            $categoryId = $categorySlug;
+        }
+
+        // Pretty SEO URL: /directory/{slug}-in-kot-sultan
+        if (! empty($categoryId) && ! ctype_digit((string) $categoryId) && $categorySlug === null) {
+            $path = seo_with_place(seo_strip_place_suffix((string) $categoryId));
+            $qs   = [];
+            if ($query) {
+                $qs['q'] = $query;
+            }
+            $target = base_url('directory/' . $path) . ($qs ? ('?' . http_build_query($qs)) : '');
+            return redirect()->to($target, 301);
+        }
 
         $page       = max(1, (int) ($this->request->getGet('page') ?? 1));
         $categories = $categoryModel->getActiveCategories();
@@ -170,8 +186,33 @@ class Home extends BaseController
             $categoryTotalsMap[$row['category_id']] = $row['total'];
         }
 
+        $selectedCategory = $categoryId;
+        $pageTitle = lang('App.nav_directory') . ' | ' . lang('App.brand_name');
+        $metaDescription = lang('App.directory_subtitle');
+
+        if (! empty($categoryId)) {
+            foreach ($categories as $cat) {
+                $match = ctype_digit((string) $categoryId)
+                    ? ((int) $cat['id'] === (int) $categoryId)
+                    : (
+                        ($cat['slug'] ?? '') === seo_strip_place_suffix((string) $categoryId)
+                        || ($cat['seo_slug'] ?? '') === (string) $categoryId
+                        || ($cat['slug'] ?? '') === (string) $categoryId
+                    );
+                if ($match) {
+                    $selectedCategory = $cat['id'];
+                    $pageTitle = ($cat['display_name'] ?? $cat['name_en']) . ' in Kot Sultan | ' . lang('App.brand_name');
+                    $metaDescription = 'Find ' . ($cat['name_en'] ?? 'local') . ' listings in Kot Sultan, District Layyah.';
+                    break;
+                }
+            }
+        }
+
         return view('directory', [
             'lang'             => $lang,
+            'title'            => $pageTitle,
+            'metaDescription'  => $metaDescription,
+            'canonical'        => current_url(),
             'categories'       => $categories,
             'businesses'       => $searchData['businesses'],
             'totalResults'     => $searchData['total'],
@@ -179,7 +220,7 @@ class Home extends BaseController
             'totalPages'       => $searchData['totalPages'],
             'perPage'          => $searchData['perPage'],
             'searchQuery'      => $query,
-            'selectedCategory' => $categoryId,
+            'selectedCategory' => $selectedCategory,
             'categoryTotals'   => $categoryTotalsMap,
         ]);
     }
@@ -199,7 +240,7 @@ class Home extends BaseController
         $category   = $this->request->getGet('category') ?? 'all';
         $page       = max(1, (int) ($this->request->getGet('page') ?? 1));
 
-        $searchData = $emergencyModel->searchEmergencyContacts($query, $category, $page, 2000);
+        $searchData = $emergencyModel->searchEmergencyContacts($query, $category, $page, 60);
         $categories = $emergencyModel->getCategories();
 
         $allCount = 0;
@@ -373,25 +414,51 @@ class Home extends BaseController
     public function business($idOrSlug = null)
     {
         $lang = service('request')->getLocale();
+        helper('seo');
+
         if ($idOrSlug === null) {
             $idOrSlug = $this->request->getGet('slug') ?: $this->request->getGet('id');
         }
 
-        $business = (new BusinessModel())->getLocalizedBusiness($idOrSlug);
+        $businessModel = new BusinessModel();
+        $business      = $businessModel->getLocalizedBusiness($idOrSlug);
 
-        if (!$business) {
-            return redirect()->to(base_url('directory'));
+        if (! $business) {
+            return $this->not_found();
         }
 
-        // Redirect to clean slug URL if accessed via ID query parameter or numeric route
-        if (!empty($business['slug']) && ($this->request->getGet('id') !== null || (is_numeric($idOrSlug) && $idOrSlug != $business['slug']))) {
-            $canonicalUrl = base_url('listing/' . $business['slug']);
-            if (current_url() !== $canonicalUrl) {
-                return redirect()->to($canonicalUrl, 301);
-            }
+        $canonicalSlug = $business['seo_slug'] ?? seo_listing_slug_from_row($business);
+        $incoming      = rawurldecode(trim((string) $idOrSlug));
+
+        // Keep DB slug healthy for future requests (fixes legacy Urdu/broken slugs).
+        if (! empty($canonicalSlug) && ($business['slug'] ?? '') !== $canonicalSlug) {
+            $businessModel->update((int) $business['id'], ['slug' => $canonicalSlug]);
+            $business['slug']     = $canonicalSlug;
+            $business['seo_slug'] = $canonicalSlug;
+            $business['url']      = base_url('listing/' . $canonicalSlug);
         }
 
-        return view('business', ['lang' => $lang, 'business' => $business]);
+        $canonicalUrl = base_url('listing/' . $canonicalSlug);
+
+        // Redirect only when the URL segment is not already the canonical SEO slug
+        // (avoids path/baseURL comparison loops on shared hosting).
+        $needsRedirect = ($incoming !== $canonicalSlug)
+            || $this->request->getGet('id') !== null
+            || $this->request->getGet('slug') !== null;
+
+        if ($needsRedirect) {
+            return redirect()->to($canonicalUrl, 301);
+        }
+
+        $name = $business['display_name'] ?: ($business['name_en'] ?? 'Listing');
+
+        return view('business', [
+            'lang'            => $lang,
+            'business'        => $business,
+            'title'           => $name . ' in Kot Sultan | ' . lang('App.brand_name'),
+            'metaDescription' => trim(($business['display_description'] ?? '') ?: ($name . ' in Kot Sultan — contact, address, and details on KotSultan.com')),
+            'canonical'       => $canonicalUrl,
+        ]);
     }
 
     public function login()

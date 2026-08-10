@@ -27,16 +27,18 @@ class CategoryModel extends Model
 
     public function getActiveCategories()
     {
+        helper('seo');
         $locale = $this->locale();
         $rows = $this->where('status', 'active')
                     ->orderBy('display_order', 'ASC')
                     ->orderBy("name_{$locale}", 'ASC')
                     ->findAll();
         return array_map(function (array $row) {
-            $slugOrId = !empty($row['slug']) ? $row['slug'] : $row['id'];
+            $pathSlug = seo_category_path_slug($row);
             return $row + [
                 'display_name' => $this->localized($row, 'name'),
-                'url'          => function_exists('base_url') ? base_url('directory?category=' . $slugOrId) : '/directory?category=' . $slugOrId,
+                'seo_slug'     => $pathSlug,
+                'url'          => function_exists('base_url') ? base_url('directory/' . $pathSlug) : '/directory/' . $pathSlug,
             ];
         }, $rows);
     }

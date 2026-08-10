@@ -62,6 +62,17 @@
                 </h4>
                 <div class="space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                     <p class="flex items-start gap-2">
+                        <i data-lucide="user-round" class="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0 mt-0.5"></i>
+                        <span>
+                            <span class="font-bold text-slate-800 dark:text-slate-200"><?= lang('App.founder_name') ?></span><br>
+                            <?= lang('App.founder_badge') ?> · <?= lang('App.founder_role') ?>
+                        </span>
+                    </p>
+                    <p class="flex items-center gap-2">
+                        <i data-lucide="phone" class="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0"></i>
+                        <a href="tel:<?= lang('App.founder_phone_raw') ?>" dir="ltr" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-semibold"><?= lang('App.founder_phone') ?></a>
+                    </p>
+                    <p class="flex items-start gap-2">
                         <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0 mt-0.5"></i>
                         <span><?= lang('App.office_address') ?></span>
                     </p>
@@ -69,7 +80,6 @@
                         <i data-lucide="mail" class="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0"></i>
                         <span>info@kotsultan.com</span>
                     </p>
-
                 </div>
             </div>
 

@@ -18,14 +18,57 @@
 </section>
 
 
-<!-- Mission & Vision Cards -->
+<!-- Founder -->
 <section class="py-12 md:py-16 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 transition-colors duration-200">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-slate-900 p-6 sm:p-8 md:p-10">
+            <div class="flex flex-col sm:flex-row gap-6 sm:items-start">
+                <div class="w-16 h-16 rounded-2xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <i data-lucide="user-round" class="w-8 h-8"></i>
+                </div>
+                <div class="space-y-3 flex-1">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 text-[11px] font-bold uppercase tracking-wider">
+                        <?= lang('App.founder_badge') ?>
+                    </span>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                            <?= lang('App.founder_name') ?>
+                        </h2>
+                        <p class="text-sm font-semibold text-emerald-700 dark:text-emerald-400 mt-1">
+                            <?= lang('App.founder_title') ?>
+                        </p>
+                        <p class="text-sm text-slate-700 dark:text-slate-300 mt-2 font-medium leading-relaxed">
+                            <?= lang('App.founder_role') ?>
+                        </p>
+                    </div>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                        <?= lang('App.founder_text') ?>
+                    </p>
+                    <div class="flex flex-wrap items-center gap-3 pt-2">
+                        <a href="tel:<?= lang('App.founder_phone_raw') ?>" dir="ltr" class="inline-flex items-center gap-2 px-4 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-sm transition-colors">
+                            <i data-lucide="phone" class="w-4 h-4"></i>
+                            <?= lang('App.founder_phone') ?>
+                        </a>
+                        <a href="https://wa.me/923136350169" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-4 h-11 rounded-xl border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 text-sm font-bold hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors">
+                            <i data-lucide="message-circle" class="w-4 h-4"></i>
+                            WhatsApp
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- Mission & Vision Cards -->
+<section class="py-12 md:py-16 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200/80 dark:border-slate-800 transition-colors duration-200">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             
             <!-- Mission Card -->
-            <div class="p-8 rounded-2xl bg-slate-50/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 space-y-4">
+            <div class="p-8 rounded-2xl bg-white dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 space-y-4">
                 <div class="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                     <i data-lucide="target" class="w-6 h-6"></i>
                 </div>
@@ -38,7 +81,7 @@
             </div>
 
             <!-- Vision Card -->
-            <div class="p-8 rounded-2xl bg-slate-50/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 space-y-4">
+            <div class="p-8 rounded-2xl bg-white dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 space-y-4">
                 <div class="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                     <i data-lucide="compass" class="w-6 h-6"></i>
                 </div>

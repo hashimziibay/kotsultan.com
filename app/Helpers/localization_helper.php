@@ -65,13 +65,23 @@ if (!function_exists('get_business_image_url')) {
             $normalized
         );
 
-        // Physical file exists under public/ → serve its absolute public URL
-        if ($normalized !== '' && is_file(FCPATH . $normalized)) {
-            return base_url($normalized);
+        // Physical file exists under public/ → serve its absolute public URL.
+        // Skip is_file() on production page renders (hundreds of disk hits per directory page).
+        // Missing images are handled by <img onerror> fallbacks in the views.
+        if ($normalized !== '') {
+            if (ENVIRONMENT !== 'production') {
+                if (is_file(FCPATH . $normalized)) {
+                    return base_url($normalized);
+                }
+            } else {
+                return base_url($normalized);
+            }
         }
 
-        // Missing file: log for repair, then render the designed fallback
-        log_message('warning', '[BusinessImage] Missing physical file for DB reference: ' . $image . ' (normalized: ' . $normalized . ')');
+        // Missing file in development: log for repair, then render the designed fallback
+        if (ENVIRONMENT !== 'production') {
+            log_message('warning', '[BusinessImage] Missing physical file for DB reference: ' . $image . ' (normalized: ' . $normalized . ')');
+        }
 
         return $fallback;
     }

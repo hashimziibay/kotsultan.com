@@ -10,6 +10,7 @@
         <div class="relative h-44 bg-slate-100 dark:bg-slate-700 overflow-hidden">
             <?php $cardImage = get_business_image_url($item['image'] ?? ''); ?>
             <img src="<?= esc($cardImage) ?>" 
+                 loading="lazy" decoding="async"
                  onerror="this.onerror=null;this.src='<?= esc('https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&q=80&w=600') ?>';"
                  alt="<?= esc($item['display_name']) ?>" 
                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">

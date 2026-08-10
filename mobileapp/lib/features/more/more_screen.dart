@@ -141,8 +141,8 @@ class AboutPage extends StatelessWidget {
             icon: Icons.info_rounded,
             title: app.t(en: 'About Kot Sultan Directory', ur: 'کوٹ سلطان ڈائریکٹری کے بارے میں'),
             body: app.t(
-              en: 'KotSultan.com is the digital directory for Kot Sultan, Pakistan, built to help residents and visitors easily connect with local businesses, schools, clinics, and essential services.',
-              ur: 'کوٹ سلطان ڈاٹ کام مقامی کاروبار، اسکولز، کلینکس اور ضروری خدمات سے جوڑنے کے لیے بنائی گئی ڈیجیٹل ڈائریکٹری ہے۔',
+              en: 'KotSultan.com is the digital directory for Kot Sultan, Pakistan, founded by Muhammad Hashim, Director of ZIIBAY SOFT and VERTEX SCHOOL SYSTEM & IT ACADEMY. It helps residents and visitors connect with local businesses, schools, clinics, and essential services.',
+              ur: 'کوٹ سلطان ڈاٹ کام مقامی کاروبار، اسکولز، کلینکس اور ضروری خدمات سے جوڑنے کے لیے بنائی گئی ڈیجیٹل ڈائریکٹری ہے، جس کے بانی محمد ہاشم ہیں — ڈائریکٹر، زیبے سافٹ اور ورٹیکس اسکول سسٹم اینڈ آئی ٹی اکیڈمی۔',
             ),
           ),
           const SizedBox(height: 12),
@@ -227,16 +227,16 @@ class _FounderCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               app.t(
-                en: 'Director, ZIIBAY SOFT',
-                ur: 'ڈائریکٹر، زیبے سافٹ',
+                en: 'Founder of KotSultan.com',
+                ur: 'کوٹ سلطان ڈاٹ کام کے بانی',
               ),
               style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.emeraldDark),
             ),
             const SizedBox(height: 4),
             Text(
               app.t(
-                en: 'Vertex School and IT Academy',
-                ur: 'ورٹیکس اسکول اینڈ آئی ٹی اکیڈمی',
+                en: 'Director, ZIIBAY SOFT and VERTEX SCHOOL SYSTEM & IT ACADEMY',
+                ur: 'ڈائریکٹر، زیبے سافٹ اور ورٹیکس اسکول سسٹم اینڈ آئی ٹی اکیڈمی',
               ),
               style: TextStyle(color: Colors.grey.shade700, height: 1.35),
             ),
@@ -297,8 +297,8 @@ class ContactPage extends StatelessWidget {
                   leading: const Icon(Icons.person_rounded, color: AppColors.emerald),
                   title: const Text('Muhammad Hashim', style: TextStyle(fontWeight: FontWeight.w800)),
                   subtitle: Text(app.t(
-                    en: 'Founder · Director, ZIIBAY SOFT\nVertex School and IT Academy',
-                    ur: 'بانی · ڈائریکٹر، زیبے سافٹ\nورٹیکس اسکول اینڈ آئی ٹی اکیڈمی',
+                    en: 'Founder of KotSultan.com\nDirector, ZIIBAY SOFT and VERTEX SCHOOL SYSTEM & IT ACADEMY',
+                    ur: 'کوٹ سلطان ڈاٹ کام کے بانی\nڈائریکٹر، زیبے سافٹ اور ورٹیکس اسکول سسٹم اینڈ آئی ٹی اکیڈمی',
                   )),
                   isThreeLine: true,
                 ),

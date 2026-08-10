@@ -7,7 +7,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?? lang('App.brand_name') . ' - ' . lang('App.brand_tagline') ?></title>
+    <title><?= esc($title ?? lang('App.brand_name') . ' - ' . lang('App.brand_tagline')) ?></title>
+    <?php if (! empty($metaDescription)): ?>
+    <meta name="description" content="<?= esc($metaDescription) ?>">
+    <?php endif; ?>
+    <?php if (! empty($canonical)): ?>
+    <link rel="canonical" href="<?= esc($canonical) ?>">
+    <?php endif; ?>
+    <meta property="og:title" content="<?= esc($title ?? lang('App.brand_name')) ?>">
+    <?php if (! empty($metaDescription)): ?>
+    <meta property="og:description" content="<?= esc($metaDescription) ?>">
+    <?php endif; ?>
+    <meta property="og:type" content="website">
     
     <!-- Favicon (matches navbar brand map-pin icon) -->
     <link rel="icon" href="<?= base_url('favicon.svg') ?>" type="image/svg+xml">
@@ -19,20 +30,18 @@
     <!-- Google Fonts: Inter (English UI) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="<?= base_url('css/app.css') ?>">
     
     <!-- Alpine.js Plugins & Core -->
-    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.13.5/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Click Spark Particle Effect -->
-    <script defer src="<?= base_url('js/click-spark.js') ?>"></script>
+    <!-- Lucide Icons (pinned + deferred) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 
     <!-- Apply saved theme before first paint to avoid theme flash/inconsistency -->
     <script>
@@ -47,28 +56,13 @@
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200 antialiased relative">
     
-    <!-- Global Preloader -->
-    <div id="global-preloader" class="fixed inset-0 z-[99999] bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center transition-all duration-500">
-        <div class="relative flex items-center justify-center mb-4">
-            <!-- Pulsing outer ring -->
-            <div class="absolute inset-0 rounded-full border-4 border-emerald-500/20 animate-ping"></div>
-            <!-- Spinning inner ring -->
-            <div class="absolute w-16 h-16 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
-            <!-- Center Icon -->
-            <div class="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 z-10">
-                <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
-            </div>
-        </div>
-        <p class="text-sm font-semibold text-slate-500 dark:text-slate-400 animate-pulse tracking-wide">
+    <!-- Lightweight boot overlay (hides as soon as DOM is ready) -->
+    <div id="global-preloader" class="fixed inset-0 z-[99999] bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center transition-opacity duration-200 pointer-events-none">
+        <div class="w-10 h-10 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
+        <p class="mt-3 text-sm font-semibold text-slate-500 dark:text-slate-400 tracking-wide">
             <?= lang('App.brand_name') ?? 'KotSultan' ?>
         </p>
     </div>
-
-    <!-- Magic UI Smooth Cursor (Desktop Only) -->
-    <?= $this->include('components/smooth_cursor') ?>
-
-    <!-- Global Magic UI Animated Grid Pattern Background -->
-    <?= $this->include('components/animated_grid') ?>
 
     <!-- Navbar -->
     <?= $this->include('components/navbar') ?>
@@ -82,8 +76,30 @@
     <?= $this->include('components/footer') ?>
 
     <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
+        function bootUi() {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+            const preloader = document.getElementById('global-preloader');
+            if (preloader) {
+                preloader.classList.add('opacity-0', 'invisible');
+                setTimeout(() => { preloader.style.display = 'none'; }, 180);
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bootUi);
+        } else {
+            bootUi();
+        }
+        // Lucide is deferred — retry briefly until available
+        let iconTries = 0;
+        const iconTimer = setInterval(() => {
+            iconTries += 1;
+            if (window.lucide || iconTries > 40) {
+                clearInterval(iconTimer);
+                if (window.lucide) window.lucide.createIcons();
+            }
+        }, 50);
 
         // Theme handler with light mode as default & Circular View Transition
         document.addEventListener('alpine:init', () => {
@@ -207,17 +223,6 @@
             }, { threshold: 0.3 });
 
             document.querySelectorAll('[data-count-to]').forEach(el => counterObserver.observe(el));
-        });
-
-        // Global Preloader Fade-out
-        window.addEventListener('load', () => {
-            const preloader = document.getElementById('global-preloader');
-            if (preloader) {
-                preloader.classList.add('opacity-0', 'invisible');
-                setTimeout(() => {
-                    preloader.style.display = 'none';
-                }, 500);
-            }
         });
     </script>
 </body>

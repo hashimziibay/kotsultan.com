@@ -49,17 +49,21 @@ class CategoryController extends BaseController
             return redirect()->back()->withInput()->with('error', implode(' ', $this->validator->getErrors()));
         }
 
+        helper('seo');
         $data = [
             'name_en'       => trim((string) $this->request->getPost('name_en')),
             'name_ur'       => trim((string) $this->request->getPost('name_ur')),
-            'slug'          => url_title(trim((string) $this->request->getPost('name_en')), '-', true),
+            'slug'          => 'pending-' . bin2hex(random_bytes(3)),
             'icon'          => trim((string) $this->request->getPost('icon')) ?: 'folder',
             'display_order' => (int) ($this->request->getPost('display_order') ?? 0),
             'status'        => $this->request->getPost('status') ?? 'active',
         ];
 
         $categoryModel = new CategoryModel();
-        $id = $categoryModel->insert($data);
+        $id = (int) $categoryModel->insert($data);
+        $categoryModel->update($id, [
+            'slug' => make_unique_category_seo_slug($data['name_en'], $id),
+        ]);
 
         AdminActivityLogModel::log('Created Category', 'Categories', $id, "Created category {$data['name_en']}");
 
@@ -100,9 +104,11 @@ class CategoryController extends BaseController
             return redirect()->back()->withInput()->with('error', implode(' ', $this->validator->getErrors()));
         }
 
+        helper('seo');
         $data = [
             'name_en'       => trim((string) $this->request->getPost('name_en')),
             'name_ur'       => trim((string) $this->request->getPost('name_ur')),
+            'slug'          => make_unique_category_seo_slug(trim((string) $this->request->getPost('name_en')), (int) $id),
             'icon'          => trim((string) $this->request->getPost('icon')) ?: 'folder',
             'display_order' => (int) ($this->request->getPost('display_order') ?? 0),
             'status'        => $this->request->getPost('status') ?? 'active',

@@ -37,6 +37,27 @@
                 </div>
 
                 <div class="space-y-4">
+                    <div class="flex items-start gap-3 p-4 rounded-xl bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800/60 shadow-sm">
+                        <i data-lucide="user-round" class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                        <div>
+                            <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm"><?= lang('App.founder_badge') ?></h4>
+                            <p class="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5"><?= lang('App.founder_name') ?></p>
+                            <p class="text-xs text-emerald-700 dark:text-emerald-400 mt-1 font-semibold leading-relaxed"><?= lang('App.founder_role') ?></p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3 p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80">
+                        <i data-lucide="phone" class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                        <div>
+                            <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm"><?= lang('App.founder_phone_label') ?> / <?= lang('App.helpline_whatsapp') ?></h4>
+                            <a href="tel:<?= lang('App.founder_phone_raw') ?>" dir="ltr" class="text-sm font-bold text-emerald-700 dark:text-emerald-400 mt-0.5 inline-block hover:underline"><?= lang('App.founder_phone') ?></a>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <a href="tel:<?= lang('App.founder_phone_raw') ?>" class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"><?= lang('App.founder_phone_label') ?></a>
+                                <a href="https://wa.me/923136350169" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-50 dark:hover:bg-emerald-950/40">WhatsApp</a>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="flex items-start gap-3 p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80">
                         <i data-lucide="map-pin" class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5"></i>
                         <div>
@@ -52,8 +73,6 @@
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">info@kotsultan.com</p>
                         </div>
                     </div>
-
-
                 </div>
             </div>
 

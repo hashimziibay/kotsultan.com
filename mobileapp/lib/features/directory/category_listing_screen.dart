@@ -167,7 +167,7 @@ class _CategoryListingScreenState extends State<CategoryListingScreen> {
                                     onTap: () {
                                       Navigator.of(context).push(MaterialPageRoute(
                                         builder: (_) => BusinessDetailScreen(
-                                          idOrSlug: '${b['slug'] ?? b['id']}',
+                                          idOrSlug: '${b['id'] ?? b['slug'] ?? ''}',
                                         ),
                                       ));
                                     },

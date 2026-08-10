@@ -76,7 +76,7 @@ class BusinessController extends BaseApiController
 
         return [
             'id'         => (int) $b['id'],
-            'slug'       => $b['slug'] ?? null,
+            'slug'       => $b['seo_slug'] ?? ($b['slug'] ?? null),
             'name'       => $b['display_name'] ?? ($b['name_en'] ?? ''),
             'name_en'    => $b['name_en'] ?? '',
             'name_ur'    => $b['name_ur'] ?? '',

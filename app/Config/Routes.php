@@ -5,6 +5,8 @@ use CodeIgniter\Router\RouteCollection;
 /** @var RouteCollection $routes */
 $routes->get('/', 'Home::index');
 $routes->get('/directory', 'Home::directory');
+$routes->get('/directory/(:segment)', 'Home::directory/$1');
+$routes->get('/category/(:segment)', 'Home::directory/$1');
 $routes->get('/listings', 'Home::directory'); // Alias for backward compatibility
 $routes->get('/wall-of-kot-sultan', 'Home::wall');
 $routes->get('/wall-of-kot-sultan/(:segment)', 'Home::wallProfile/$1');

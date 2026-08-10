@@ -58,14 +58,20 @@ class BusinessModel extends Model
         $builder = $this->baseQuery()->where('businesses.status', 'active');
 
         if (!empty($categoryId)) {
-            // Category links use slugs (homepage cards) OR numeric ids (directory
-            // dropdown). Resolve a slug to its category id so the filter never
-            // compares an INT column against a slug string (which MySQL coerces
-            // to 0 and silently returns an empty page).
+            // Category links may use:
+            // - numeric id
+            // - short slug (hospitals)
+            // - SEO path slug (hospitals-in-kot-sultan)
             if (!ctype_digit((string) $categoryId)) {
+                helper('seo');
+                $raw      = (string) $categoryId;
+                $stripped = seo_strip_place_suffix($raw);
                 $cat = $this->db->table('categories')
                                 ->select('id')
-                                ->where('slug', $categoryId)
+                                ->groupStart()
+                                    ->where('slug', $raw)
+                                    ->orWhere('slug', $stripped)
+                                ->groupEnd()
                                 ->get()
                                 ->getRowArray();
                 $categoryId = $cat ? (int) $cat['id'] : 0;
@@ -126,26 +132,66 @@ class BusinessModel extends Model
 
     public function getLocalizedBusiness($idOrSlug): ?array
     {
-        if (empty($idOrSlug)) return null;
-
-        $builder = $this->baseQuery()->where('businesses.status', 'active');
-
-        if (is_numeric($idOrSlug)) {
-            $builder->where('businesses.id', (int) $idOrSlug);
-        } else {
-            $builder->where('businesses.slug', $idOrSlug);
+        if ($idOrSlug === null || $idOrSlug === '') {
+            return null;
         }
 
-        $row = $builder->first();
-        if (!$row && is_string($idOrSlug) && ctype_digit($idOrSlug)) {
+        helper('seo');
+
+        $raw = rawurldecode(trim((string) $idOrSlug));
+        if ($raw === '') {
+            return null;
+        }
+
+        // 1) Exact slug match (preferred — avoids collisions with ...-in-kot-sultan-{id} variants)
+        $row = $this->baseQuery()
+            ->where('businesses.status', 'active')
+            ->where('businesses.slug', $raw)
+            ->first();
+        if ($row) {
+            return $this->localizedRow($row);
+        }
+
+        // 2) Numeric id
+        if (ctype_digit($raw)) {
             $row = $this->baseQuery()
-                        ->where('businesses.status', 'active')
-                        ->where('businesses.id', (int) $idOrSlug)
-                        ->first();
+                ->where('businesses.status', 'active')
+                ->where('businesses.id', (int) $raw)
+                ->first();
+            if ($row) {
+                return $this->localizedRow($row);
+            }
         }
 
-        if (!$row) return null;
-        return $this->localizedRow($row);
+        // 3) Trailing id from SEO slug: name-in-kot-sultan-1512
+        $trailingId = seo_extract_trailing_id($raw);
+        if ($trailingId && str_contains($raw, seo_place_suffix())) {
+            $row = $this->baseQuery()
+                ->where('businesses.status', 'active')
+                ->where('businesses.id', $trailingId)
+                ->first();
+            if ($row) {
+                return $this->localizedRow($row);
+            }
+        }
+
+        // 4) Legacy short slug / missing place suffix
+        $stripped = seo_strip_place_suffix($raw);
+        $withPlace = seo_with_place($stripped);
+        foreach (array_unique([$stripped, $withPlace]) as $candidate) {
+            if ($candidate === '' || $candidate === $raw) {
+                continue;
+            }
+            $row = $this->baseQuery()
+                ->where('businesses.status', 'active')
+                ->where('businesses.slug', $candidate)
+                ->first();
+            if ($row) {
+                return $this->localizedRow($row);
+            }
+        }
+
+        return null;
     }
 
     private function baseQuery()
@@ -168,7 +214,8 @@ class BusinessModel extends Model
 
     private function localizedRow(array $row): array
     {
-        $slugOrId = !empty($row['slug']) ? $row['slug'] : ($row['id'] ?? '');
+        helper('seo');
+        $slugOrId = seo_listing_slug_from_row($row);
 
         // Address resolution: address_en / address_ur first, then legacy address
         $addressVal = $this->localized($row, 'address');
@@ -183,6 +230,7 @@ class BusinessModel extends Model
             'display_village_name'  => $this->localized($row, 'village_name'),
             'display_address'       => $addressVal,
             'display_description'   => $this->localized($row, 'description'),
+            'seo_slug'              => $slugOrId,
             'url'                   => function_exists('base_url') ? base_url('listing/' . $slugOrId) : '/listing/' . $slugOrId,
         ];
     }

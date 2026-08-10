@@ -186,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               compact: true,
                               onTap: () {
                                 Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (_) => BusinessDetailScreen(idOrSlug: '${b['slug'] ?? b['id']}'),
+                                  builder: (_) => BusinessDetailScreen(idOrSlug: '${b['id'] ?? b['slug'] ?? ''}'),
                                 ));
                               },
                             );

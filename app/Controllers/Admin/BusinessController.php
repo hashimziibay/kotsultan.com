@@ -125,13 +125,16 @@ class BusinessController extends BaseController
             'website'          => trim((string) $this->request->getPost('website')),
             'latitude'         => $this->request->getPost('latitude') ?: null,
             'longitude'        => $this->request->getPost('longitude') ?: null,
-            'slug'             => url_title(trim((string) $this->request->getPost('name_en')), '-', true),
+            'slug'             => 'pending-' . bin2hex(random_bytes(4)),
             'status'           => $this->request->getPost('status') ?? 'active',
             'image'            => $photoPath ?: null,
         ];
 
+        helper('seo');
         $businessModel = new BusinessModel();
-        $insertId      = $businessModel->insert($data);
+        $insertId      = (int) $businessModel->insert($data);
+        $seoSlug       = make_unique_listing_seo_slug($data['name_en'], $insertId);
+        $businessModel->update($insertId, ['slug' => $seoSlug]);
 
         AdminActivityLogModel::log('Created Business', 'Businesses', $insertId, "Created business {$data['name_en']}");
 
@@ -203,6 +206,9 @@ class BusinessController extends BaseController
             'status'           => $this->request->getPost('status') ?? 'active',
             'image'            => $photoPath,
         ];
+
+        helper('seo');
+        $data['slug'] = make_unique_listing_seo_slug($data['name_en'], (int) $id);
 
         $businessModel->update($id, $data);
 
