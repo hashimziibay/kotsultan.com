@@ -108,12 +108,12 @@
                             <?php endif; ?>
                             
                             <div class="relative">
-                                <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-4 rtl:right-4 rtl:left-auto top-1/2 -translate-y-1/2"></i>
+                                <i data-lucide="search" class="search-field-icon w-5 h-5 text-slate-400 absolute top-1/2 -translate-y-1/2 pointer-events-none"></i>
                                 <input type="text" 
                                        name="q" 
                                        value="<?= esc($searchQuery ?? '') ?>" 
                                        placeholder="<?= lang('App.search_placeholder') ?>" 
-                                       class="w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 h-12 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 text-sm font-medium outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all">
+                                       class="search-field-input w-full h-12 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 text-sm font-medium outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all">
                             </div>
                             
                             <button type="submit" class="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all focus:ring-2 focus:ring-emerald-500/20 flex items-center justify-center">
@@ -184,12 +184,12 @@
                             <?php endif; ?>
                             
                             <div class="relative flex-grow">
-                                <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-4 rtl:right-4 rtl:left-auto top-1/2 -translate-y-1/2"></i>
+                                <i data-lucide="search" class="search-field-icon w-5 h-5 text-slate-400 absolute top-1/2 -translate-y-1/2 pointer-events-none"></i>
                                 <input type="text" 
                                        name="q" 
                                        value="<?= esc($searchQuery ?? '') ?>" 
                                        placeholder="<?= lang('App.search_placeholder') ?>" 
-                                       class="w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 h-14 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 text-sm md:text-base font-medium outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all shadow-sm">
+                                       class="search-field-input w-full h-14 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 text-sm md:text-base font-medium outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all shadow-sm">
                             </div>
                             
                             <button type="submit" class="flex-shrink-0 px-6 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-sm transition-all focus:ring-2 focus:ring-emerald-500/20 hidden sm:block">

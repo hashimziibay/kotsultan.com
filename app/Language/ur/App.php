@@ -562,6 +562,7 @@ return [
     'admin_msg_business_updated' => 'کاروبار کامیابی سے اپ ڈیٹ ہو گیا!',
     'admin_msg_business_deleted' => 'کاروبار کامیابی سے حذف ہو گیا۔',
     'admin_msg_status_changed' => 'کاروبار کی حیثیت {0} کر دی گئی۔',
+    'admin_msg_duplicates_hidden' => 'ویب سائٹ سے {0} ڈپلیکیٹ فہرست(یں) بھی چھپا دی گئیں۔',
     'admin_msg_category_created' => 'زمرہ کامیابی سے شامل ہو گیا!',
     'admin_msg_category_not_found' => 'زمرہ نہیں ملا۔',
     'admin_msg_category_updated' => 'زمرہ کامیابی سے اپ ڈیٹ ہو گیا!',

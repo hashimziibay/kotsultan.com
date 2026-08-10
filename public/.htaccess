@@ -1,9 +1,9 @@
 # Disable directory browsing
 Options -Indexes
 
-# Allow cross-origin requests for web fonts
+# Allow cross-origin requests for web fonts and uploaded images (Flutter web)
 <IfModule mod_headers.c>
-	<FilesMatch "\.(ttf|otf|eot|woff|woff2)$">
+	<FilesMatch "\.(ttf|otf|eot|woff|woff2|jpe?g|png|gif|webp|avif)$">
 		Header set Access-Control-Allow-Origin "*"
 		Header set Cache-Control "max-age=31536000, public"
 	</FilesMatch>

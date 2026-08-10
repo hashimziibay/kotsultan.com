@@ -36,6 +36,7 @@ class Filters extends BaseFilters
         'performance'   => PerformanceMetrics::class,
         'adminAuth'     => \App\Filters\AdminAuthFilter::class,
         'locale'        => \App\Filters\LocaleFilter::class,
+        'apiAuth'       => \App\Filters\ApiAuthFilter::class,
     ];
 
     /**

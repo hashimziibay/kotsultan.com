@@ -125,6 +125,33 @@ $routes->get('/migration', 'MigrationController::index');
 $routes->get('/migration/execute', 'MigrationController::execute');
 $routes->get('/migration/verify', 'MigrationController::verify');
 
+// Mobile App JSON API
+$routes->options('api/(.*)', static function () {
+    return service('response')
+        ->setHeader('Access-Control-Allow-Origin', '*')
+        ->setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, X-Api-Token, X-App-Locale')
+        ->setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS')
+        ->setHeader('Access-Control-Max-Age', '86400')
+        ->setStatusCode(204);
+});
+
+$routes->group('api', ['namespace' => 'App\Controllers\Api'], static function ($routes) {
+    $routes->post('auth/register', 'AuthController::register');
+    $routes->post('auth/login', 'AuthController::login');
+
+    $routes->get('auth/me', 'AuthController::me', ['filter' => 'apiAuth']);
+    $routes->put('auth/me', 'AuthController::updateMe', ['filter' => 'apiAuth']);
+    $routes->post('auth/me', 'AuthController::updateMe', ['filter' => 'apiAuth']); // Android/proxy fallback
+
+    $routes->get('home', 'HomeController::index');
+    $routes->get('categories', 'BusinessController::categories');
+    $routes->get('businesses', 'BusinessController::index');
+    $routes->get('businesses/(:segment)', 'BusinessController::show/$1');
+    $routes->get('emergency', 'EmergencyController::index');
+    $routes->get('wall', 'WallController::index');
+    $routes->get('wall/(:segment)', 'WallController::show/$1');
+});
+
 // Route ALL unmatched URLs through Home::not_found so the 404 page is
 // rendered AFTER global filters run and always follows the user's selected
 // language (previously the exception handler rendered it with the default

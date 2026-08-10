@@ -46,29 +46,27 @@ class EmergencyModel extends Model
         $builder = $this->where('status', 'active');
 
         if (!empty($category) && $category !== 'all') {
-            // ALWAYS filter by the stable English category name since the UI passes it in the URL
-            $builder->where('category_en', $category);
+            // Accept English or Urdu category labels from the mobile app.
+            $builder->groupStart()
+                    ->where('category_en', $category)
+                    ->orWhere('category_ur', $category)
+                    ->groupEnd();
         }
 
         if ($query !== null && trim((string)$query) !== '') {
-            $needle = trim((string)$query);
-            $builder->groupStart();
-            if ($isUrdu) {
-                $builder->like('department_name_ur', $needle)
-                        ->orLike('category_ur', $needle)
-                        ->orLike('address_ur', $needle)
-                        ->orLike('working_hours_ur', $needle)
-                        ->orLike('phone_primary', $needle)
-                        ->orLike('phone_secondary', $needle);
-            } else {
-                $builder->like('department_name_en', $needle)
-                        ->orLike('category_en', $needle)
-                        ->orLike('address_en', $needle)
-                        ->orLike('working_hours_en', $needle)
-                        ->orLike('phone_primary', $needle)
-                        ->orLike('phone_secondary', $needle);
-            }
-            $builder->groupEnd();
+            helper('search');
+            apply_fuzzy_search($builder, [
+                'department_name_en',
+                'department_name_ur',
+                'category_en',
+                'category_ur',
+                'address_en',
+                'address_ur',
+                'working_hours_en',
+                'working_hours_ur',
+                'phone_primary',
+                'phone_secondary',
+            ], trim((string) $query));
         }
 
         if ($perPage === null) {

@@ -104,10 +104,10 @@
                     <i data-lucide="map-pin" class="w-5 h-5"></i>
                 </div>
                 <div class="flex flex-col text-start">
-                    <span class="font-bold text-lg leading-none tracking-tight text-slate-900 dark:text-white">
+                    <span class="brand-name font-bold text-lg leading-none tracking-tight text-slate-900 dark:text-white">
                         <?= lang('App.brand_name') ?>
                     </span>
-                    <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                    <span class="brand-tagline text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">
                         <?= lang('App.brand_tagline') ?>
                     </span>
                 </div>
@@ -129,43 +129,45 @@
 
             <!-- Controls: Language Switcher & Dark Mode Toggle -->
             <!-- Natural HTML order left-to-right (LTR) will automatically flip in RTL thanks to flex -->
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 h-[38px]">
                 
                 <!-- Magic UI Style Animated Theme Toggler -->
                 <button @click="toggleTheme($event)" 
-                        class="btn btn-sm btn-secondary p-2 relative overflow-hidden transition-all duration-300 transform active:scale-95" 
+                        type="button"
+                        class="nav-control-btn nav-theme-btn btn btn-sm btn-secondary relative overflow-hidden transition-all duration-300 transform active:scale-95" 
                         aria-label="Toggle Dark Mode">
-                    <div class="relative w-4 h-4 flex items-center justify-center">
+                    <span class="relative w-3.5 h-3.5 block">
                         <span class="absolute inset-0 flex items-center justify-center transition-all duration-500 ease-out transform"
                               :class="darkMode ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'">
-                            <i data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+                            <i data-lucide="sun" class="w-3.5 h-3.5 text-amber-400"></i>
                         </span>
                         <span class="absolute inset-0 flex items-center justify-center transition-all duration-500 ease-out transform"
                               :class="!darkMode ? 'rotate-0 scale-100 opacity-100' : 'rotate-90 scale-0 opacity-0'">
-                            <i data-lucide="moon" class="w-4 h-4 text-slate-700"></i>
+                            <i data-lucide="moon" class="w-3.5 h-3.5 text-slate-700 dark:text-slate-200"></i>
                         </span>
-                    </div>
+                    </span>
                 </button>
                 
                 <!-- Language Switcher Dropdown -->
-                <div class="relative" x-data="{ open: false }">
+                <div class="relative h-[38px] flex items-center" x-data="{ open: false }">
                     <!-- Added flex-row and rtl:flex-row-reverse for icon order within button -->
                     <button @click="open = !open" 
                             @click.outside="open = false"
-                            class="btn btn-sm btn-secondary flex items-center gap-2 flex-row rtl:flex-row-reverse">
-                        <i data-lucide="globe" class="w-4 h-4 text-emerald-600"></i>
-                        <span><?= $isUrdu ? 'اردو' : 'EN' ?></span>
-                        <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                            type="button"
+                            class="nav-control-btn nav-lang-btn btn btn-sm btn-secondary flex-row rtl:flex-row-reverse">
+                        <i data-lucide="globe" class="w-3.5 h-3.5 text-emerald-600 shrink-0"></i>
+                        <span class="nav-lang-label leading-none"><?= $isUrdu ? 'اردو' : 'EN' ?></span>
+                        <i data-lucide="chevron-down" class="w-3 h-3 shrink-0"></i>
                     </button>
 
                     <!-- end-0 aligns right in LTR, left in RTL -->
                     <div x-show="open" 
                          x-transition
-                         class="absolute end-0 mt-2 w-32 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg py-1 z-50">
-                        <a href="<?= base_url('lang/en') ?>" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-start flex-row rtl:flex-row-reverse">
+                         class="nav-lang-menu absolute end-0 mt-2 w-36 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg py-1 z-50">
+                        <a href="<?= base_url('lang/en') ?>" class="nav-lang-option flex items-center gap-2 px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-start flex-row rtl:flex-row-reverse">
                             <span><?= lang('App.english_en') ?></span>
                         </a>
-                        <a href="<?= base_url('lang/ur') ?>" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-sans text-start flex-row rtl:flex-row-reverse">
+                        <a href="<?= base_url('lang/ur') ?>" class="nav-lang-option flex items-center gap-2 px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-start flex-row rtl:flex-row-reverse">
                             <span><?= lang('App.urdu_ur') ?></span>
                         </a>
                     </div>

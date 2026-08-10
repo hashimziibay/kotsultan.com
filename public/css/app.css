@@ -3348,12 +3348,22 @@ body {
      GLOBAL URDU MODE: html[lang="ur"]
      Every visible element gets Jameel Noori Nastaleeq.
      No exceptions. No other Urdu fonts.
+     Nastaleeq reads smaller than Latin at the same CSS size,
+     so we bump the root + text sizes (~18%) for visual parity.
      ------------------------------------------------------- */
+
+html[lang="ur"] {
+  font-size: 131.25%; /* 21px base → scales rem utilities */
+}
 
 html[lang="ur"],
   html[lang="ur"] body {
   font-family: 'Jameel Noori Nastaleeq', serif;
   line-height: 2.1;
+}
+
+html[lang="ur"] body {
+  font-size: 1.25rem;
 }
 
 html[lang="ur"] *:not(i):not(svg):not(path):not(script):not(style) {
@@ -3363,40 +3373,40 @@ html[lang="ur"] *:not(i):not(svg):not(path):not(script):not(style) {
 /* Headings — slightly more line height for tall Nastaleeq ligatures */
 
 html[lang="ur"] h1 {
-  font-size: 2.4rem;
+  font-size: 3rem;
   line-height: 2.4;
   font-weight: 700;
   padding-block: 0.2em;
 }
 
 html[lang="ur"] h2 {
-  font-size: 1.75rem;
+  font-size: 2.25rem;
   line-height: 2.3;
   font-weight: 700;
   padding-block: 0.15em;
 }
 
 html[lang="ur"] h3 {
-  font-size: 1.35rem;
+  font-size: 1.75rem;
   line-height: 2.2;
   font-weight: 700;
   padding-block: 0.1em;
 }
 
 html[lang="ur"] h4 {
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   line-height: 2.1;
   font-weight: 600;
 }
 
 html[lang="ur"] h5 {
-  font-size: 1rem;
+  font-size: 1.25rem;
   line-height: 2.0;
   font-weight: 600;
 }
 
 html[lang="ur"] h6 {
-  font-size: 0.9rem;
+  font-size: 1.125rem;
   line-height: 2.0;
   font-weight: 600;
 }
@@ -3411,26 +3421,91 @@ html[lang="ur"] p,
   html[lang="ur"] td,
   html[lang="ur"] th {
   line-height: 2.1;
-  font-size: 1rem;
+  font-size: 1.25rem;
 }
 
-/* Navigation links — full Nastaleeq */
+/* Navigation links — full Nastaleeq (exclude compact header controls) */
 
 html[lang="ur"] nav a,
-  html[lang="ur"] nav span,
-  html[lang="ur"] nav button {
-  font-size: 1rem;
+  html[lang="ur"] nav span:not(.nav-lang-label),
+  html[lang="ur"] nav button:not(.nav-control-btn) {
+  font-size: 1.25rem;
   line-height: 2.0;
   letter-spacing: 0;
 }
 
 /* Buttons — taller to accommodate Nastaleeq descenders */
 
-html[lang="ur"] .btn {
+html[lang="ur"] .btn:not(.nav-control-btn) {
   min-height: 2.6em;
+  font-size: 1.1875rem;
   line-height: 2.0;
   letter-spacing: 0;
   padding-block: 0.5em;
+}
+
+/* Brand lockup — keep title dominant; tagline stays compact in Urdu */
+
+html[lang="ur"] .brand-name {
+  font-size: 1.35rem !important;
+  line-height: 1.6 !important;
+}
+
+html[lang="ur"] .brand-tagline {
+  font-size: 0.72rem !important;
+  line-height: 1.5 !important;
+  padding-block: 0 !important;
+}
+
+/* Navbar language/theme controls — identical height */
+
+nav button.nav-control-btn.btn,
+html[lang="ur"] nav button.nav-control-btn.btn {
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
+  overflow: hidden !important;
+}
+
+nav button.nav-theme-btn.btn,
+html[lang="ur"] nav button.nav-theme-btn.btn {
+  width: 38px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+nav button.nav-lang-btn.btn,
+html[lang="ur"] nav button.nav-lang-btn.btn {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+
+nav .nav-lang-label,
+html[lang="ur"] nav .nav-lang-label,
+html[lang="ur"] nav button.nav-control-btn span {
+  font-size: 13px !important;
+  line-height: 1 !important;
+  padding-block: 0 !important;
+}
+
+/* Language dropdown — match button text size */
+
+nav .nav-lang-menu a.nav-lang-option,
+nav .nav-lang-menu a.nav-lang-option span,
+html[lang="ur"] nav .nav-lang-menu a.nav-lang-option,
+html[lang="ur"] nav .nav-lang-menu a.nav-lang-option span {
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  padding-block: 0 !important;
 }
 
 /* Form inputs, selects, textareas */
@@ -3451,10 +3526,106 @@ html[lang="ur"] [class*="rounded-xl"],
   padding-block: 0.4em;
 }
 
+/* Listing business cards — compact in Urdu so boxes stay balanced */
+
+html[lang="ur"] .business-card,
+html[lang="ur"] .business-card [class*="rounded-xl"],
+html[lang="ur"] .business-card [class*="rounded-2xl"],
+html[lang="ur"] .business-card [class*="rounded-lg"],
+html[lang="ur"] .business-card [class*="rounded-md"],
+html[lang="ur"] .business-card [class*="rounded-full"] {
+  padding-block: 0 !important;
+}
+
+html[lang="ur"] .business-card-body {
+  padding: 0.85rem 0.95rem !important;
+}
+
+html[lang="ur"] .business-card-actions {
+  padding: 0.65rem 0.95rem 0.85rem !important;
+  margin-top: 0.35rem !important;
+}
+
+html[lang="ur"] .business-card-title,
+html[lang="ur"] .business-card-title a {
+  font-size: 1.05rem !important;
+  line-height: 1.55 !important;
+  padding-block: 0 !important;
+}
+
+html[lang="ur"] .business-card-meta,
+html[lang="ur"] .business-card-meta span,
+html[lang="ur"] .business-card-badge {
+  font-size: 0.8rem !important;
+  line-height: 1.45 !important;
+  padding-block: 0 !important;
+}
+
+html[lang="ur"] .business-card-badge {
+  padding: 0.2rem 0.55rem !important;
+}
+
+html[lang="ur"] .business-card .btn {
+  min-height: 2.1rem !important;
+  height: 2.1rem !important;
+  padding-block: 0 !important;
+  padding-inline: 0.55rem !important;
+  font-size: 0.78rem !important;
+  line-height: 1 !important;
+  gap: 0.3rem !important;
+}
+
+html[lang="ur"] .business-card .btn span {
+  font-size: 0.78rem !important;
+  line-height: 1 !important;
+  padding-block: 0 !important;
+}
+
 /* Hero search bar — keep the unified flush layout in Urdu (RTL) too.
      The rules above add padding-block to any rounded-2xl element and to
      inputs, which would push the input/button apart and un-center the
      placeholder. Scoped to the search bar only. */
+
+html[lang="ur"] div.hero-search-bar,
+html[lang="ur"] .hero-search-bar input {
+  padding-block: 0;
+  min-height: 0;
+  line-height: normal;
+}
+
+/* Keep placeholder clear of the search icon in LTR + RTL */
+
+.hero-search-icon {
+  inset-inline-start: 1.25rem;
+  inset-inline-end: auto;
+}
+
+.hero-search-input {
+  padding-inline-start: 3.5rem !important;
+  padding-inline-end: 1.25rem !important;
+}
+
+html[lang="ur"] .hero-search-input {
+  padding-inline-start: 3.5rem !important;
+  padding-inline-end: 1.25rem !important;
+}
+
+/* Directory search fields — same icon clearance */
+
+.search-field-icon {
+  inset-inline-start: 1rem;
+  inset-inline-end: auto;
+}
+
+.search-field-input {
+  padding-inline-start: 2.75rem !important;
+  padding-inline-end: 1rem !important;
+}
+
+html[lang="ur"] .search-field-input {
+  padding-inline-start: 2.75rem !important;
+  padding-inline-end: 1rem !important;
+}
 
 /* Badges / pills */
 

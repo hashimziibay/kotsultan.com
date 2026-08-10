@@ -38,10 +38,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                     <div class="space-y-4">
                         <h3 class="font-bold text-slate-900 dark:text-white text-base"><?= lang('App.location_contact') ?></h3>
+                        <?php if (!empty($business['display_address'])): ?>
                         <div class="flex items-start gap-3 text-slate-700 dark:text-slate-300">
                             <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600 mt-1 flex-shrink-0"></i>
                             <div><span class="font-bold block"><?= lang('App.address_label') ?></span><?= render_localized_text($business['display_address'] ?? '') ?></div>
                         </div>
+                        <?php endif; ?>
                         <div class="flex items-center gap-3 text-slate-700 dark:text-slate-300"><i data-lucide="phone" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><div><span class="font-bold"><?= lang('App.phone_label') ?></span><span dir="ltr" class="font-mono ml-1"><?= esc($business['phone'] ?? '') ?></span></div></div>
                         <div class="flex items-center gap-3 text-slate-700 dark:text-slate-300"><i data-lucide="message-circle" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><div><span class="font-bold"><?= lang('App.whatsapp_label') ?></span><span dir="ltr" class="font-mono ml-1"><?= esc($business['whatsapp'] ?? '') ?></span></div></div>
                     </div>

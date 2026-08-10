@@ -33,19 +33,19 @@
             <div x-data="{ isFocused: false, isHovered: false }"
                  @mouseenter="isHovered = true"
                  @mouseleave="isHovered = false"
-                 class="relative p-[6px] flex flex-col md:flex-row gap-[6px] bg-white dark:bg-slate-900 rounded-[28px] md:rounded-full transition-all duration-300 ease-out"
+                 class="hero-search-bar relative p-[6px] flex flex-col md:flex-row gap-[6px] bg-white dark:bg-slate-900 rounded-[28px] md:rounded-full transition-all duration-300 ease-out"
                  :class="isFocused ? 'border-emerald-500/45 shadow-[0_0_40px_rgba(16,185,129,0.18),0_12px_30px_rgba(16,185,129,0.08)] scale-[1.01]' : (isHovered ? 'border-emerald-500/25 shadow-[0_0_35px_rgba(16,185,129,0.15),0_12px_30px_rgba(16,185,129,0.08)]' : 'border-emerald-500/15 shadow-[0_0_30px_rgba(16,185,129,0.12),0_12px_30px_rgba(16,185,129,0.08)]')"
                  style="border-width: 1px; border-style: solid;">
                  
                 <!-- Search Input Container -->
                 <div class="relative flex-grow flex items-center h-14 min-w-0">
-                    <i data-lucide="search" class="w-6 h-6 text-[#10B981] absolute left-5 rtl:right-5 rtl:left-auto pointer-events-none transition-transform duration-300" :class="isFocused ? 'scale-110' : ''"></i>
+                    <i data-lucide="search" class="hero-search-icon w-5 h-5 text-[#10B981] absolute start-5 top-1/2 -translate-y-1/2 pointer-events-none z-10 transition-transform duration-300" :class="isFocused ? 'scale-110' : ''"></i>
                     <input type="text" 
                            name="q" 
                            placeholder="<?= lang('App.search_placeholder') ?>" 
                            @focus="isFocused = true"
                            @blur="isFocused = false"
-                           class="w-full h-full pl-[52px] rtl:pr-[52px] rtl:pl-5 pr-5 bg-transparent text-[#1E293B] dark:text-white placeholder-[#94A3B8] text-base font-medium outline-none border-none focus:ring-0">
+                           class="hero-search-input w-full h-full ps-14 pe-5 bg-transparent text-[#1E293B] dark:text-white placeholder-[#94A3B8] text-base font-medium outline-none border-none focus:ring-0">
                 </div>
 
                 <!-- Search Button -->

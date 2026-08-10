@@ -1,0 +1,94 @@
+<?php
+
+namespace App\Controllers\Api;
+
+use App\Models\WallCategoryModel;
+use App\Models\WallModel;
+
+class WallController extends BaseApiController
+{
+    public function index()
+    {
+        $this->applyLocale();
+
+        $q        = $this->request->getGet('q');
+        $category = $this->request->getGet('category');
+        $sort     = $this->request->getGet('sort') ?: 'newest';
+        $page     = max(1, (int) ($this->request->getGet('page') ?? 1));
+        $perPage  = min(50, max(1, (int) ($this->request->getGet('per_page') ?? 18)));
+
+        $result = (new WallModel())->searchWallEntries($q, $category ?: '', $sort, $page, $perPage);
+        $cats   = (new WallCategoryModel())->orderBy('display_order', 'ASC')->where('status', 'active')->findAll();
+
+        return $this->jsonOk([
+            'items' => array_map([$this, 'mapEntry'], $result['entries'] ?? []),
+            'categories' => array_map(static function ($c) {
+                return [
+                    'id'      => (int) $c['id'],
+                    'slug'    => $c['slug'] ?? null,
+                    'name_en' => $c['name_en'] ?? '',
+                    'name_ur' => $c['name_ur'] ?? '',
+                    'icon'    => $c['icon'] ?? 'user',
+                    'color'   => $c['color'] ?? null,
+                ];
+            }, $cats),
+            'total'       => $result['total'] ?? 0,
+            'page'        => $result['page'] ?? $page,
+            'per_page'    => $result['perPage'] ?? $perPage,
+            'total_pages' => $result['totalPages'] ?? 1,
+        ]);
+    }
+
+    public function show($idOrSlug = null)
+    {
+        $this->applyLocale();
+        if ($idOrSlug === null || $idOrSlug === '') {
+            return $this->jsonError('Not found', 404);
+        }
+
+        $model = new WallModel();
+        $entry = $model->getWallPersonality($idOrSlug);
+        if (!$entry) {
+            return $this->jsonError('Not found', 404);
+        }
+
+        $related = $model->getRelatedPersonalities($entry['category_id'] ?? null, $entry['id'], 4);
+
+        return $this->jsonOk([
+            'entry'   => $this->mapEntry($entry, true),
+            'related' => array_map(fn ($e) => $this->mapEntry($e), $related),
+        ]);
+    }
+
+    private function mapEntry(array $e, bool $detail = false): array
+    {
+        $photo = $this->absoluteUrl($e['photo'] ?? '') ?: ($e['photo_url'] ?? null);
+
+        $base = [
+            'id'          => (int) ($e['id'] ?? 0),
+            'slug'        => $e['slug'] ?? null,
+            'name'        => $e['display_name'] ?? ($e['name'] ?? ($e['name_en'] ?? '')),
+            'name_en'     => $e['name_en'] ?? '',
+            'name_ur'     => $e['name_ur'] ?? '',
+            'profession'  => $e['display_profession'] ?? ($e['profession'] ?? ($e['profession_en'] ?? '')),
+            'category'    => $e['display_category_name'] ?? ($e['category_name'] ?? ''),
+            'photo'       => $photo,
+            'featured'    => (bool) ($e['featured'] ?? false),
+            'views'       => (int) ($e['views'] ?? 0),
+        ];
+
+        if (!$detail) {
+            return $base;
+        }
+
+        return $base + [
+            'intro'            => $e['display_intro'] ?? ($e['intro'] ?? ($e['intro_en'] ?? '')),
+            'achievements'     => $e['display_achievements'] ?? ($e['achievements'] ?? ''),
+            'awards'           => $e['display_awards'] ?? ($e['awards'] ?? ''),
+            'years_of_service' => $e['years_of_service'] ?? '',
+            'birth_date'       => $e['birth_date'] ?? '',
+            'death_date'       => $e['death_date'] ?? '',
+            'category_id'      => $e['category_id'] ?? null,
+        ];
+    }
+}

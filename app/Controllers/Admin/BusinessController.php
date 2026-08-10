@@ -206,6 +206,16 @@ class BusinessController extends BaseController
 
         $businessModel->update($id, $data);
 
+        if (($data['status'] ?? '') === 'inactive') {
+            $hidden = $businessModel->deactivateDuplicates($data + ['id' => $id], (int) $id);
+            $msg = lang('App.admin_msg_business_updated');
+            if ($hidden > 0) {
+                $msg .= ' ' . lang('App.admin_msg_duplicates_hidden', [$hidden]);
+            }
+            AdminActivityLogModel::log('Updated Business', 'Businesses', $id, "Updated business {$data['name_en']}" . ($hidden ? " (also hid {$hidden} duplicates)" : ''));
+            return redirect()->to(base_url('admin/businesses'))->with('success', $msg);
+        }
+
         AdminActivityLogModel::log('Updated Business', 'Businesses', $id, "Updated business {$data['name_en']}");
 
         return redirect()->to(base_url('admin/businesses'))->with('success', lang('App.admin_msg_business_updated'));
@@ -233,8 +243,22 @@ class BusinessController extends BaseController
         if ($business) {
             $newStatus = ($business['status'] === 'active') ? 'inactive' : 'active';
             $businessModel->update($id, ['status' => $newStatus]);
-            AdminActivityLogModel::log('Toggled Business Status', 'Businesses', $id, "Status changed to $newStatus");
-            return redirect()->back()->with('success', lang('App.admin_msg_status_changed', [$newStatus]));
+
+            $extra = '';
+            if ($newStatus === 'inactive') {
+                $hidden = $businessModel->deactivateDuplicates($business, (int) $id);
+                if ($hidden > 0) {
+                    $extra = ' ' . lang('App.admin_msg_duplicates_hidden', [$hidden]);
+                }
+            }
+
+            AdminActivityLogModel::log(
+                'Toggled Business Status',
+                'Businesses',
+                $id,
+                "Status changed to $newStatus" . ($extra !== '' ? " (hid duplicate active copies)" : '')
+            );
+            return redirect()->back()->with('success', lang('App.admin_msg_status_changed', [$newStatus]) . $extra);
         }
 
         return redirect()->back()->with('error', lang('App.admin_msg_business_not_found'));

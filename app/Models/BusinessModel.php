@@ -79,26 +79,24 @@ class BusinessModel extends Model
         }
 
         if ($query !== null && trim((string)$query) !== '') {
-            $needle = trim((string)$query);
-            $builder->groupStart();
-            if ($locale === 'ur') {
-                $builder->like('businesses.name_ur', $needle)
-                        ->orLike('businesses.address_ur', $needle)
-                        ->orLike('businesses.description_ur', $needle)
-                        ->orLike('categories.name_ur', $needle)
-                        ->orLike('areas.name_ur', $needle)
-                        ->orLike('villages.name_ur', $needle)
-                        ->orLike('businesses.phone', $needle);
-            } else {
-                $builder->like('businesses.name_en', $needle)
-                        ->orLike('businesses.address_en', $needle)
-                        ->orLike('businesses.description_en', $needle)
-                        ->orLike('categories.name_en', $needle)
-                        ->orLike('areas.name_en', $needle)
-                        ->orLike('villages.name_en', $needle)
-                        ->orLike('businesses.phone', $needle);
-            }
-            $builder->groupEnd();
+            helper('search');
+            apply_fuzzy_search($builder, [
+                'businesses.name_en',
+                'businesses.name_ur',
+                'businesses.owner_name',
+                'businesses.address_en',
+                'businesses.address_ur',
+                'businesses.description_en',
+                'businesses.description_ur',
+                'categories.name_en',
+                'categories.name_ur',
+                'areas.name_en',
+                'areas.name_ur',
+                'villages.name_en',
+                'villages.name_ur',
+                'businesses.phone',
+                'businesses.whatsapp',
+            ], trim((string) $query));
         }
 
         if ($perPage === null) {
@@ -206,5 +204,68 @@ class BusinessModel extends Model
                     ->where('businesses.status', 'active')
                     ->groupBy('businesses.category_id, categories.name_en, categories.name_ur')
                     ->findAll();
+    }
+
+    /**
+     * When a listing is set inactive, also hide active duplicate rows
+     * (same English/Urdu name or same phone) so they don't keep showing
+     * on the public site after an admin deactivates one copy.
+     */
+    public function deactivateDuplicates(array $business, int $exceptId): int
+    {
+        $db = $this->db;
+        $updated = 0;
+
+        $nameEn = trim((string) ($business['name_en'] ?? ''));
+        $nameUr = trim((string) ($business['name_ur'] ?? ''));
+        $phone  = trim((string) ($business['phone'] ?? ''));
+
+        $builder = $db->table($this->table)
+            ->where('id !=', $exceptId)
+            ->where('status', 'active');
+
+        $parts = [];
+        if ($nameEn !== '') {
+            $parts[] = ['name_en', $nameEn];
+        }
+        if ($nameUr !== '') {
+            $parts[] = ['name_ur', $nameUr];
+        }
+        if ($phone !== '') {
+            $parts[] = ['phone', $phone];
+        }
+
+        if ($parts === []) {
+            return 0;
+        }
+
+        $builder->groupStart();
+        foreach ($parts as $i => [$field, $value]) {
+            if ($i === 0) {
+                $builder->where($field, $value);
+            } else {
+                $builder->orWhere($field, $value);
+            }
+        }
+        $builder->groupEnd();
+
+        // Fetch IDs first so we can return a reliable count.
+        $ids = array_column(
+            $builder->select('id')->get()->getResultArray(),
+            'id'
+        );
+
+        if ($ids === []) {
+            return 0;
+        }
+
+        $db->table($this->table)
+            ->whereIn('id', $ids)
+            ->update([
+                'status'     => 'inactive',
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+
+        return count($ids);
     }
 }

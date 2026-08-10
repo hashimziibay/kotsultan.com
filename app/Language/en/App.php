@@ -562,6 +562,7 @@ return [
     'admin_msg_business_updated' => 'Business updated successfully!',
     'admin_msg_business_deleted' => 'Business deleted successfully.',
     'admin_msg_status_changed' => 'Business status changed to {0}.',
+    'admin_msg_duplicates_hidden' => 'Also hid {0} duplicate listing(s) from the website.',
     'admin_msg_category_created' => 'Category created successfully!',
     'admin_msg_category_not_found' => 'Category not found.',
     'admin_msg_category_updated' => 'Category updated successfully!',
