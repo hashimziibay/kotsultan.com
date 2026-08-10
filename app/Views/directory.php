@@ -249,11 +249,23 @@
 
                     <!-- Pagination -->
                     <?php if ($totalPages > 1): ?>
-                        <?php $params = $_GET; ?>
+                        <?php
+                            $directoryBaseUrl = $directoryBaseUrl ?? base_url('directory');
+                            $pageQuery = [];
+                            if (! empty($searchQuery)) {
+                                $pageQuery['q'] = $searchQuery;
+                            }
+                            $buildPageUrl = static function (int $pageNum) use ($directoryBaseUrl, $pageQuery): string {
+                                $q = $pageQuery;
+                                if ($pageNum > 1) {
+                                    $q['page'] = $pageNum;
+                                }
+                                return $directoryBaseUrl . ($q ? ('?' . http_build_query($q)) : '');
+                            };
+                        ?>
                         <div class="flex items-center justify-center flex-wrap gap-2 pt-4">
                             <?php if ($currentPage > 1): ?>
-                                <?php $params['page'] = $currentPage - 1; ?>
-                                <a href="<?= base_url('directory?' . http_build_query($params)) ?>" class="btn btn-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 flex items-center gap-1 hover:border-emerald-500 dark:hover:border-emerald-500">
+                                <a href="<?= esc($buildPageUrl($currentPage - 1)) ?>" class="btn btn-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 flex items-center gap-1 hover:border-emerald-500 dark:hover:border-emerald-500">
                                     <i data-lucide="<?= $isUrdu ? 'chevron-right' : 'chevron-left' ?>" class="w-4 h-4"></i>
                                     <span><?= lang('App.pagination_previous') ?></span>
                                 </a>
@@ -263,18 +275,16 @@
                                 $startPage = max(1, $currentPage - 2);
                                 $endPage   = min($totalPages, $currentPage + 2);
                                 for ($p = $startPage; $p <= $endPage; $p++):
-                                    $params['page'] = $p;
                                     $isActive = ($p === $currentPage);
                             ?>
-                                <a href="<?= base_url('directory?' . http_build_query($params)) ?>" 
+                                <a href="<?= esc($buildPageUrl($p)) ?>" 
                                    class="w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all <?= $isActive ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-500' ?>">
                                     <?= $p ?>
                                 </a>
                             <?php endfor; ?>
 
                             <?php if ($currentPage < $totalPages): ?>
-                                <?php $params['page'] = $currentPage + 1; ?>
-                                <a href="<?= base_url('directory?' . http_build_query($params)) ?>" class="btn btn-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 flex items-center gap-1 hover:border-emerald-500 dark:hover:border-emerald-500">
+                                <a href="<?= esc($buildPageUrl($currentPage + 1)) ?>" class="btn btn-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 flex items-center gap-1 hover:border-emerald-500 dark:hover:border-emerald-500">
                                     <span><?= lang('App.pagination_next') ?></span>
                                     <i data-lucide="<?= $isUrdu ? 'chevron-left' : 'chevron-right' ?>" class="w-4 h-4"></i>
                                 </a>

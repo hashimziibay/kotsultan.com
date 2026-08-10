@@ -164,32 +164,10 @@ class Home extends BaseController
             $categoryId = $categorySlug;
         }
 
-        // Pretty SEO URL: /directory/{slug}-in-kot-sultan
-        if (! empty($categoryId) && ! ctype_digit((string) $categoryId) && $categorySlug === null) {
-            $path = seo_with_place(seo_strip_place_suffix((string) $categoryId));
-            $qs   = [];
-            if ($query) {
-                $qs['q'] = $query;
-            }
-            $target = base_url('directory/' . $path) . ($qs ? ('?' . http_build_query($qs)) : '');
-            return redirect()->to($target, 301);
-        }
-
-        $page       = max(1, (int) ($this->request->getGet('page') ?? 1));
         $categories = $categoryModel->getActiveCategories();
-        $searchData = $businessModel->searchDirectory($query, $categoryId, $tagId, $page, 30);
 
-        // Compute category totals
-        $categoryCounts = $businessModel->getCategoryCounts();
-        $categoryTotalsMap = [];
-        foreach ($categoryCounts as $row) {
-            $categoryTotalsMap[$row['category_id']] = $row['total'];
-        }
-
-        $selectedCategory = $categoryId;
-        $pageTitle = lang('App.nav_directory') . ' | ' . lang('App.brand_name');
-        $metaDescription = lang('App.directory_subtitle');
-
+        // Resolve numeric ?category=161 (or SEO path) to the category row for redirects + filtering.
+        $activeCategory = null;
         if (! empty($categoryId)) {
             foreach ($categories as $cat) {
                 $match = ctype_digit((string) $categoryId)
@@ -200,12 +178,65 @@ class Home extends BaseController
                         || ($cat['slug'] ?? '') === (string) $categoryId
                     );
                 if ($match) {
-                    $selectedCategory = $cat['id'];
-                    $pageTitle = ($cat['display_name'] ?? $cat['name_en']) . ' in Kot Sultan | ' . lang('App.brand_name');
-                    $metaDescription = 'Find ' . ($cat['name_en'] ?? 'local') . ' listings in Kot Sultan, District Layyah.';
+                    $activeCategory = $cat;
                     break;
                 }
             }
+        }
+
+        // Always prefer pretty SEO URLs: /directory/{name}-in-kot-sultan
+        // Redirect old ?category=161 (and non-pretty query slugs) with 301.
+        if ($activeCategory && $categorySlug === null) {
+            $qs = [];
+            if ($query) {
+                $qs['q'] = $query;
+            }
+            $page = (int) ($this->request->getGet('page') ?? 1);
+            if ($page > 1) {
+                $qs['page'] = $page;
+            }
+            $target = ($activeCategory['url'] ?? base_url('directory/' . ($activeCategory['seo_slug'] ?? $activeCategory['slug'])));
+            if ($qs) {
+                $target .= '?' . http_build_query($qs);
+            }
+            return redirect()->to($target, 301);
+        }
+
+        if ($activeCategory && $categorySlug !== null) {
+            $wanted = $activeCategory['seo_slug'] ?? seo_category_path_slug($activeCategory);
+            if ((string) $categorySlug !== (string) $wanted) {
+                $qs = [];
+                if ($query) {
+                    $qs['q'] = $query;
+                }
+                $page = (int) ($this->request->getGet('page') ?? 1);
+                if ($page > 1) {
+                    $qs['page'] = $page;
+                }
+                $target = base_url('directory/' . $wanted) . ($qs ? ('?' . http_build_query($qs)) : '');
+                return redirect()->to($target, 301);
+            }
+        }
+
+        $page       = max(1, (int) ($this->request->getGet('page') ?? 1));
+        $filterKey  = $activeCategory['id'] ?? $categoryId;
+        $searchData = $businessModel->searchDirectory($query, $filterKey, $tagId, $page, 30);
+
+        // Compute category totals
+        $categoryCounts = $businessModel->getCategoryCounts();
+        $categoryTotalsMap = [];
+        foreach ($categoryCounts as $row) {
+            $categoryTotalsMap[$row['category_id']] = $row['total'];
+        }
+
+        $selectedCategory = $activeCategory['id'] ?? null;
+        $directoryBaseUrl = $activeCategory['url'] ?? base_url('directory');
+        $pageTitle = lang('App.nav_directory') . ' | ' . lang('App.brand_name');
+        $metaDescription = lang('App.directory_subtitle');
+
+        if ($activeCategory) {
+            $pageTitle = ($activeCategory['display_name'] ?? $activeCategory['name_en']) . ' in Kot Sultan | ' . lang('App.brand_name');
+            $metaDescription = 'Find ' . ($activeCategory['name_en'] ?? 'local') . ' listings in Kot Sultan, District Layyah.';
         }
 
         return view('directory', [
@@ -221,6 +252,7 @@ class Home extends BaseController
             'perPage'          => $searchData['perPage'],
             'searchQuery'      => $query,
             'selectedCategory' => $selectedCategory,
+            'directoryBaseUrl' => $directoryBaseUrl,
             'categoryTotals'   => $categoryTotalsMap,
         ]);
     }

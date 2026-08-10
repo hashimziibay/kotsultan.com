@@ -62,7 +62,7 @@
         <div class="flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
             <span class="font-semibold text-slate-500 dark:text-slate-400 me-1"><?= lang('App.popular_shortcuts') ?></span>
             <?php foreach (array_slice($categories, 0, 8) as $cat): ?>
-                <a href="<?= !empty($cat['url']) ? esc($cat['url']) : base_url('directory?category=' . (!empty($cat['slug']) ? $cat['slug'] : $cat['id'])) ?>" 
+                <a href="<?= !empty($cat['url']) ? esc($cat['url']) : base_url('directory/' . (!empty($cat['seo_slug']) ? $cat['seo_slug'] : ((!empty($cat['slug']) ? $cat['slug'] : $cat['id']) . '-in-kot-sultan'))) ?>" 
                    class="btn btn-sm btn-secondary font-medium">
                     <?= $isUrdu ? esc($cat['name_ur']) : esc($cat['name_en']) ?>
                 </a>
