@@ -100,6 +100,24 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1"><?= lang('App.admin_photo_upload') ?></label>
+                    <?php if (!empty($person['photo'])): ?>
+                        <?php
+                            $currentPhoto = trim((string) $person['photo']);
+                            $currentPhotoUrl = preg_match('#^(https?:)?//#i', $currentPhoto)
+                                ? $currentPhoto
+                                : base_url($currentPhoto);
+                        ?>
+                        <div class="mb-3 flex items-center gap-3">
+                            <img src="<?= esc($currentPhotoUrl) ?>"
+                                 alt="Current photo"
+                                 class="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+                                 onerror="this.style.display='none'">
+                            <div class="text-[11px] text-slate-500">
+                                <p class="font-bold text-slate-700 dark:text-slate-300"><?= lang('App.admin_current_photo') ?? 'Current profile photo' ?></p>
+                                <p><?= lang('App.admin_photo_replace_hint') ?? 'Choose a new file below to replace it.' ?></p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                     <input type="file" name="photo" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700">
                     <p class="text-[10px] text-slate-400 mt-1"><?= lang('App.admin_profile_photo_hint') ?? 'Main profile photo (single image).' ?></p>
                 </div>
@@ -124,40 +142,6 @@
                     </button>
                 </div>
 
-                <?php $attachments = $attachments ?? []; ?>
-                <?php if (!empty($attachments)): ?>
-                <div class="space-y-2">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400"><?= lang('App.admin_existing_attachments') ?></p>
-                    <?php foreach ($attachments as $att): ?>
-                    <div class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                        <div class="min-w-0 flex items-center gap-2">
-                            <?php if (($att['file_type'] ?? '') === 'image'): ?>
-                                <img src="<?= esc($att['url']) ?>" alt="" class="w-9 h-9 rounded-lg object-cover border border-slate-200 dark:border-slate-700">
-                            <?php else: ?>
-                                <span class="w-9 h-9 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-extrabold uppercase text-slate-600 dark:text-slate-300">
-                                    <?= esc($att['file_type'] ?? 'file') ?>
-                                </span>
-                            <?php endif; ?>
-                            <div class="min-w-0">
-                                <a href="<?= esc($att['url']) ?>" target="_blank" class="block text-xs font-bold text-emerald-700 dark:text-emerald-400 truncate hover:underline">
-                                    <?= esc($att['original_name'] ?? basename($att['file_path'] ?? '')) ?>
-                                </a>
-                                <p class="text-[10px] text-slate-400"><?= number_format(((int) ($att['file_size'] ?? 0)) / 1024, 1) ?> KB</p>
-                            </div>
-                        </div>
-                        <?php if (!empty($person['id'])): ?>
-                        <form action="<?= base_url('admin/wall-of-kot-sultan/' . $person['id'] . '/attachment/' . $att['id'] . '/delete') ?>" method="POST" onsubmit="return confirm('<?= esc(lang('App.admin_confirm_delete_attachment'), 'js') ?>');">
-                            <?= csrf_field() ?>
-                            <button type="submit" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40" title="<?= lang('App.admin_delete') ?>">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </form>
-                        <?php endif; ?>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
-
                 <div id="attachment-inputs" class="space-y-2">
                     <input type="file" name="attachments[]" multiple
                            accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -175,6 +159,40 @@
             </button>
         </div>
     </form>
+
+    <?php $attachments = $attachments ?? []; ?>
+    <?php if (!empty($person['id']) && !empty($attachments)): ?>
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-3 mt-6">
+        <h4 class="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider"><?= lang('App.admin_existing_attachments') ?></h4>
+        <div class="space-y-2">
+            <?php foreach ($attachments as $att): ?>
+            <div class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                <div class="min-w-0 flex items-center gap-2">
+                    <?php if (($att['file_type'] ?? '') === 'image'): ?>
+                        <img src="<?= esc($att['url']) ?>" alt="" class="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700">
+                    <?php else: ?>
+                        <span class="w-12 h-12 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-extrabold uppercase text-slate-600 dark:text-slate-300">
+                            <?= esc($att['file_type'] ?? 'file') ?>
+                        </span>
+                    <?php endif; ?>
+                    <div class="min-w-0">
+                        <a href="<?= esc($att['url']) ?>" target="_blank" class="block text-xs font-bold text-emerald-700 dark:text-emerald-400 truncate hover:underline">
+                            <?= esc($att['original_name'] ?? basename($att['file_path'] ?? '')) ?>
+                        </a>
+                        <p class="text-[10px] text-slate-400"><?= number_format(((int) ($att['file_size'] ?? 0)) / 1024, 1) ?> KB</p>
+                    </div>
+                </div>
+                <form action="<?= base_url('admin/wall-of-kot-sultan/' . $person['id'] . '/attachment/' . $att['id'] . '/delete') ?>" method="POST" onsubmit="return confirm('<?= esc(lang('App.admin_confirm_delete_attachment'), 'js') ?>');">
+                    <?= csrf_field() ?>
+                    <button type="submit" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40" title="<?= lang('App.admin_delete') ?>">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
 <script>
