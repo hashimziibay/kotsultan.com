@@ -56,6 +56,22 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
     return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
   }
 
+  static const Set<String> _socialPlatforms = {
+    'facebook',
+    'instagram',
+    'x',
+    'twitter',
+    'youtube',
+    'linkedin',
+    'tiktok',
+    'whatsapp',
+    'telegram',
+    'threads',
+    'snapchat',
+    'pinterest',
+    'github',
+  };
+
   List<Map<String, dynamic>> _parseLinkList(dynamic raw) {
     List<dynamic> list = const [];
     if (raw is List) {
@@ -76,43 +92,100 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
       if (item is String) {
         final url = item.trim();
         if (url.isEmpty) continue;
-        out.add({'url': url, 'title': url, 'platform': 'website', 'label': 'Website', 'kind': 'external'});
+        out.add({
+          'url': url,
+          'title': url,
+          'platform': 'website',
+          'label': 'Website',
+          'kind': 'external',
+        });
         continue;
       }
       if (item is! Map) continue;
       final m = Map<String, dynamic>.from(item);
       final url = '${m['url'] ?? m['link'] ?? ''}'.trim();
       if (url.isEmpty) continue;
-      final platform = '${m['platform'] ?? ''}'.trim().toLowerCase();
+      var platform = '${m['platform'] ?? ''}'.trim().toLowerCase();
+      if (platform == 'twitter') platform = 'x';
+      if (platform.isEmpty) {
+        platform = _inferPlatformFromUrl(url);
+      }
       final label = '${m['label'] ?? ''}'.trim();
       final title = '${m['title'] ?? m['name'] ?? label}'.trim();
-      final kind = '${m['kind'] ?? m['type'] ?? ''}'.trim().toLowerCase();
+      final kindRaw = '${m['kind'] ?? m['type'] ?? ''}'.trim().toLowerCase();
+      final kind = (kindRaw == 'social' || kindRaw == 'external')
+          ? kindRaw
+          : (_socialPlatforms.contains(platform) ? 'social' : 'external');
       out.add({
         'url': url,
         'title': title.isEmpty ? (label.isEmpty ? url : label) : title,
         'platform': platform.isEmpty ? 'website' : platform,
-        'label': label.isEmpty ? title : label,
-        'kind': kind.isEmpty ? 'external' : kind,
+        'label': label.isEmpty ? (title.isEmpty ? url : title) : label,
+        'kind': kind,
       });
     }
     return out;
   }
 
-  List<Map<String, dynamic>> get _externalLinks {
-    final fromApi = _parseLinkList(_entry?['external_links']);
-    // Back-compat: if API only sent combined list, keep non-social here.
-    if (fromApi.isNotEmpty) {
-      return fromApi.where((e) => '${e['kind']}' != 'social').toList();
+  String _inferPlatformFromUrl(String url) {
+    final uri = Uri.tryParse(url);
+    var host = (uri?.host ?? '').toLowerCase();
+    if (host.startsWith('www.')) host = host.substring(4);
+    const map = <String, String>{
+      'facebook.com': 'facebook',
+      'fb.com': 'facebook',
+      'fb.me': 'facebook',
+      'instagram.com': 'instagram',
+      'twitter.com': 'x',
+      'x.com': 'x',
+      'youtube.com': 'youtube',
+      'youtu.be': 'youtube',
+      'linkedin.com': 'linkedin',
+      'tiktok.com': 'tiktok',
+      'wa.me': 'whatsapp',
+      'whatsapp.com': 'whatsapp',
+      't.me': 'telegram',
+      'telegram.me': 'telegram',
+      'threads.net': 'threads',
+      'snapchat.com': 'snapchat',
+      'pinterest.com': 'pinterest',
+      'pin.it': 'pinterest',
+      'github.com': 'github',
+    };
+    for (final entry in map.entries) {
+      if (host == entry.key || host.endsWith('.${entry.key}')) {
+        return entry.value;
+      }
     }
-    return const [];
+    return 'website';
   }
 
+  bool _isSocialLink(Map<String, dynamic> link) {
+    if ('${link['kind']}' == 'social') return true;
+    if ('${link['kind']}' == 'external') return false;
+    return _socialPlatforms.contains('${link['platform']}'.toLowerCase());
+  }
+
+  /// Website / news / other non-social links.
+  List<Map<String, dynamic>> get _externalLinks {
+    final dedicatedSocial = _parseLinkList(_entry?['social_links']);
+    final primary = _parseLinkList(_entry?['external_links']);
+
+    // New API already splits lists; still drop any social rows that leaked into external_links.
+    if (dedicatedSocial.isNotEmpty || (_entry?.containsKey('social_links') ?? false)) {
+      return primary.where((e) => !_isSocialLink(e)).toList();
+    }
+    return primary.where((e) => !_isSocialLink(e)).toList();
+  }
+
+  /// Facebook, Instagram, YouTube, etc.
   List<Map<String, dynamic>> get _socialLinks {
-    final fromApi = _parseLinkList(_entry?['social_links']);
-    if (fromApi.isNotEmpty) return fromApi;
-    // Back-compat fallback from combined external_links
-    final combined = _parseLinkList(_entry?['external_links']);
-    return combined.where((e) => '${e['kind']}' == 'social').toList();
+    final dedicated = _parseLinkList(_entry?['social_links']);
+    if (dedicated.isNotEmpty) {
+      return dedicated.map((e) => {...e, 'kind': 'social'}).toList();
+    }
+    // Legacy: everything was in external_links — split by platform/kind.
+    return _parseLinkList(_entry?['external_links']).where(_isSocialLink).toList();
   }
 
   IconData _platformIcon(String platform) {

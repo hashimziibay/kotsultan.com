@@ -180,7 +180,7 @@ class CatalogRepository {
   }
 
   Future<CatalogResult<Map<String, dynamic>>> getWallItem(String idOrSlug) async {
-    final key = '$_wallDetailPrefix$idOrSlug';
+    final key = '$_wallDetailPrefix${idOrSlug}_v2';
     try {
       final res = await api.get('wall/$idOrSlug');
       final data = Map<String, dynamic>.from(res['data'] as Map);
