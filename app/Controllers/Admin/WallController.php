@@ -95,9 +95,13 @@ class WallController extends BaseController
             'photo'            => $photoPath ?: null,
             'slug'             => url_title(trim((string) $this->request->getPost('name_en')), '-', true),
         ];
+        $this->applyExternalLinksField($data);
 
         $wallModel = new WallModel();
         $id = (int) $wallModel->insert($data);
+        if ($id < 1) {
+            return redirect()->back()->withInput()->with('error', lang('App.admin_msg_personality_not_found'));
+        }
 
         $uploadResult = $this->handleAttachmentsUpload($id);
         $uploaded     = (int) ($uploadResult['saved'] ?? 0);
@@ -194,6 +198,7 @@ class WallController extends BaseController
             'status'           => $this->request->getPost('status') ?? 'active',
             'photo'            => $photoPath,
         ];
+        $this->applyExternalLinksField($data);
 
         $wallModel->update($id, $data);
 
@@ -315,6 +320,11 @@ class WallController extends BaseController
 
         try {
             $model = new WallAttachmentModel();
+            // Ensure parent row exists (also guards against bad ids).
+            $parent = (new WallModel())->find($wallId);
+            if (! $parent) {
+                return ['saved' => 0, 'errors' => [lang('App.admin_msg_personality_not_found')]];
+            }
             $order = (int) $model->where('wall_id', $wallId)->countAllResults();
         } catch (\Throwable $e) {
             return ['saved' => 0, 'errors' => [lang('App.admin_attachments_table_missing')]];
@@ -381,6 +391,84 @@ class WallController extends BaseController
             $this->deleteAttachmentFile($row);
             $model->delete($row['id']);
         }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function applyExternalLinksField(array &$data): void
+    {
+        try {
+            if (! db_connect()->fieldExists('external_links', 'wall_of_kot_sultan')) {
+                return;
+            }
+        } catch (\Throwable $e) {
+            return;
+        }
+        $data['external_links'] = $this->encodeExternalLinks(
+            $this->request->getPost('link_url'),
+            $this->request->getPost('link_title')
+        );
+    }
+
+    /**
+     * @param mixed $urls
+     * @param mixed $titles
+     */
+    private function encodeExternalLinks($urls, $titles): ?string
+    {
+        $urls   = is_array($urls) ? $urls : [];
+        $titles = is_array($titles) ? $titles : [];
+        $links  = [];
+
+        foreach ($urls as $i => $rawUrl) {
+            $url = trim((string) $rawUrl);
+            if ($url === '') {
+                continue;
+            }
+            if (! preg_match('#^https?://#i', $url)) {
+                $url = 'https://' . $url;
+            }
+            if (! filter_var($url, FILTER_VALIDATE_URL)) {
+                continue;
+            }
+            $title = trim((string) ($titles[$i] ?? ''));
+            $links[] = [
+                'url'   => $url,
+                'title' => $title !== '' ? $title : $url,
+            ];
+        }
+
+        return $links === [] ? null : json_encode($links, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * @return list<array{url:string,title:string}>
+     */
+    public static function decodeExternalLinks(?string $json): array
+    {
+        if ($json === null || trim($json) === '') {
+            return [];
+        }
+        $decoded = json_decode($json, true);
+        if (! is_array($decoded)) {
+            return [];
+        }
+        $out = [];
+        foreach ($decoded as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $url = trim((string) ($row['url'] ?? ''));
+            if ($url === '') {
+                continue;
+            }
+            $out[] = [
+                'url'   => $url,
+                'title' => trim((string) ($row['title'] ?? $url)),
+            ];
+        }
+        return $out;
     }
 
     private function deleteAttachmentFile(array $attachment): void

@@ -14,6 +14,7 @@ class WallModel extends Model
         'category_id',
         'slug',
         'photo',
+        'external_links',
         'name_en',
         'name_ur',
         'profession_en',

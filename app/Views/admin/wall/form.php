@@ -134,6 +134,46 @@
             <div class="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
                 <div class="flex items-start justify-between gap-3">
                     <div>
+                        <h4 class="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider"><?= lang('App.admin_external_links') ?></h4>
+                        <p class="text-[11px] text-slate-500 mt-1"><?= lang('App.admin_external_links_hint') ?></p>
+                    </div>
+                    <button type="button" id="add-link-row" class="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800">
+                        + <?= lang('App.admin_add_link') ?>
+                    </button>
+                </div>
+
+                <?php
+                    $externalLinks = [];
+                    if (!empty($person['external_links'])) {
+                        $decoded = json_decode((string) $person['external_links'], true);
+                        if (is_array($decoded)) {
+                            $externalLinks = $decoded;
+                        }
+                    }
+                    if ($externalLinks === []) {
+                        $externalLinks = [['title' => '', 'url' => '']];
+                    }
+                ?>
+                <div id="link-rows" class="space-y-2">
+                    <?php foreach ($externalLinks as $link): ?>
+                    <div class="link-row grid grid-cols-1 sm:grid-cols-[1fr_1.4fr_auto] gap-2">
+                        <input type="text" name="link_title[]" value="<?= esc($link['title'] ?? '') ?>"
+                               placeholder="<?= esc(lang('App.admin_link_title_placeholder')) ?>"
+                               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                        <input type="url" name="link_url[]" value="<?= esc($link['url'] ?? '') ?>"
+                               placeholder="https://example.com"
+                               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                        <button type="button" class="remove-link-row px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold border border-transparent hover:border-rose-200">
+                            <?= lang('App.admin_remove') ?>
+                        </button>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
                         <h4 class="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider"><?= lang('App.admin_attachments') ?></h4>
                         <p class="text-[11px] text-slate-500 mt-1"><?= lang('App.admin_attachments_hint') ?></p>
                     </div>
@@ -199,16 +239,57 @@
 (() => {
   const btn = document.getElementById('add-attachment-input');
   const box = document.getElementById('attachment-inputs');
-  if (!btn || !box) return;
-  btn.addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.name = 'attachments[]';
-    input.multiple = true;
-    input.accept = '.jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    input.className = 'w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 dark:file:bg-slate-800 dark:file:text-slate-200';
-    box.appendChild(input);
-  });
+  if (btn && box) {
+    btn.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.name = 'attachments[]';
+      input.multiple = true;
+      input.accept = '.jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      input.className = 'w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 dark:file:bg-slate-800 dark:file:text-slate-200';
+      box.appendChild(input);
+    });
+  }
+
+  const linksBox = document.getElementById('link-rows');
+  const addLinkBtn = document.getElementById('add-link-row');
+  const removeLabel = <?= json_encode(lang('App.admin_remove')) ?>;
+  const titlePlaceholder = <?= json_encode(lang('App.admin_link_title_placeholder')) ?>;
+
+  function bindRemove(btn) {
+    btn.addEventListener('click', () => {
+      if (!linksBox) return;
+      const rows = linksBox.querySelectorAll('.link-row');
+      if (rows.length <= 1) {
+        const row = rows[0];
+        if (!row) return;
+        row.querySelectorAll('input').forEach((el) => { el.value = ''; });
+        return;
+      }
+      btn.closest('.link-row')?.remove();
+    });
+  }
+
+  if (linksBox) {
+    linksBox.querySelectorAll('.remove-link-row').forEach(bindRemove);
+  }
+
+  if (addLinkBtn && linksBox) {
+    addLinkBtn.addEventListener('click', () => {
+      const row = document.createElement('div');
+      row.className = 'link-row grid grid-cols-1 sm:grid-cols-[1fr_1.4fr_auto] gap-2';
+      row.innerHTML = `
+        <input type="text" name="link_title[]" value="" placeholder="${titlePlaceholder.replace(/"/g, '&quot;')}"
+               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+        <input type="url" name="link_url[]" value="" placeholder="https://example.com"
+               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+        <button type="button" class="remove-link-row px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold border border-transparent hover:border-rose-200">${removeLabel}</button>
+      `;
+      linksBox.appendChild(row);
+      const removeBtn = row.querySelector('.remove-link-row');
+      if (removeBtn) bindRemove(removeBtn);
+    });
+  }
 })();
 </script>
 

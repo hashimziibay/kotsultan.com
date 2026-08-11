@@ -62,6 +62,7 @@ class WallController extends BaseApiController
 
         return $this->jsonOk([
             'entry'       => $this->mapEntry($entry, true) + [
+                'external_links' => $this->mapExternalLinks($entry['external_links'] ?? null),
                 'attachments' => array_map(function (array $a) {
                     return [
                         'id'            => (int) ($a['id'] ?? 0),
@@ -75,6 +76,35 @@ class WallController extends BaseApiController
             ],
             'related'     => array_map(fn ($e) => $this->mapEntry($e), $related),
         ]);
+    }
+
+    /**
+     * @return list<array{url:string,title:string}>
+     */
+    private function mapExternalLinks($json): array
+    {
+        if ($json === null || trim((string) $json) === '') {
+            return [];
+        }
+        $decoded = json_decode((string) $json, true);
+        if (! is_array($decoded)) {
+            return [];
+        }
+        $out = [];
+        foreach ($decoded as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $url = trim((string) ($row['url'] ?? ''));
+            if ($url === '') {
+                continue;
+            }
+            $out[] = [
+                'url'   => $url,
+                'title' => trim((string) ($row['title'] ?? $url)),
+            ];
+        }
+        return $out;
     }
 
     private function mapEntry(array $e, bool $detail = false): array
