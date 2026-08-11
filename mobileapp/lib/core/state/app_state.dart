@@ -176,9 +176,11 @@ class AppState extends ChangeNotifier {
     if (_refreshQueued || cacheRefreshing) return;
     _refreshQueued = true;
     cacheRefreshing = true;
+    // One notify for the thin progress bar — screens should soft-refresh on epoch only.
     notifyListeners();
+    var updated = false;
     try {
-      final updated = await catalog.refreshCatalog();
+      updated = await catalog.refreshCatalog();
       if (updated) {
         offlineMode = false;
         catalogEpoch++;

@@ -54,18 +54,19 @@
     };
 ?>
 <style>
-/* Direction-agnostic active indicator */
+/* Active underline — physical left/right so it stays centered in LTR and RTL */
 .nav-link-active::after {
     content: '';
     position: absolute;
     bottom: 4px;
-    inset-inline-start: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    margin-inline: auto;
     width: 40px;
     height: 3px;
     border-radius: 9999px;
     background-color: #F59E0B;
-    transition: opacity 200ms ease, transform 200ms ease;
+    transition: opacity 200ms ease;
 }
 /* Navbar controls — keep theme + language buttons aligned in LTR and RTL */
 .nav-controls {

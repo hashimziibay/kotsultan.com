@@ -31,7 +31,7 @@ class CatalogRepository {
       final res = await api.get('home');
       final data = Map<String, dynamic>.from(res['data'] as Map);
       await cache.putJson(_homeKey, data);
-      unawaited(prefetchCatalog());
+      // Background catalog refresh is owned by AppState — avoid nested refreshes here.
       return CatalogResult(data);
     } catch (e) {
       final cached = await cache.getMap(_homeKey);

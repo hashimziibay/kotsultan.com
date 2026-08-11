@@ -17,12 +17,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  static const _featuredCount = 4;
+  static const _signatureUr = 'کوٹ سلطان، دلوں میں بستا ایک چھوٹا سا جہان';
+
   final _searchCtrl = TextEditingController();
   bool _loading = true;
   bool _fromCache = false;
   String? _error;
   Map<String, dynamic>? _data;
   int _seenEpoch = -1;
+  int _loadSeq = 0;
 
   @override
   void initState() {
@@ -49,29 +53,44 @@ class _HomeScreenState extends State<HomeScreen> {
     final epoch = context.read<AppState>().catalogEpoch;
     if (epoch != _seenEpoch) {
       _seenEpoch = epoch;
-      _load();
+      // Background cache refresh finished — update quietly, keep current UI.
+      _load(silent: true);
     }
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> _load({bool silent = false}) async {
+    final seq = ++_loadSeq;
+    final showSpinner = !silent && _data == null;
+    if (showSpinner) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    } else if (!silent && mounted) {
+      setState(() => _error = null);
+    }
+
     try {
       final app = context.read<AppState>();
-      // ignore: unawaited_futures
-      app.syncPendingUser();
+      if (app.pendingUserSync) {
+        // ignore: unawaited_futures
+        app.syncPendingUser();
+      }
       final res = await app.catalog.getHome();
+      if (!mounted || seq != _loadSeq) return;
       setState(() {
         _data = res.data;
         _fromCache = res.fromCache;
+        _loading = false;
+        _error = null;
       });
       app.setOfflineBanner(res.fromCache);
     } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      if (!mounted || seq != _loadSeq) return;
+      setState(() {
+        if (_data == null) _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
@@ -84,10 +103,144 @@ class _HomeScreenState extends State<HomeScreen> {
     ShellScope.maybeOf(context)?.goToTab(1);
   }
 
+  void _openCategory(Map<String, dynamic> c, AppState app) {
+    final id = '${c['id'] ?? c['slug'] ?? ''}'.trim();
+    if (id.isEmpty) return;
+    final name = app.isUrdu ? '${c['name_ur'] ?? c['name']}' : '${c['name_en'] ?? c['name']}';
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => CategoryListingScreen(categoryId: id, categoryName: name),
+    ));
+  }
+
+  Color _colorFor(int index) {
+    const palette = [
+      AppColors.emerald,
+      AppColors.sky,
+      AppColors.amber,
+      Color(0xFF8B5CF6),
+      AppColors.rose,
+      Color(0xFF0D9488),
+    ];
+    return palette[index % palette.length];
+  }
+
+  Future<void> _openAllCategoriesSheet(AppState app, bool isDark, List<dynamic> categories) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? AppColors.slate800 : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) {
+        final maxH = MediaQuery.sizeOf(ctx).height * 0.72;
+        return SafeArea(
+          child: SizedBox(
+            height: maxH,
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.slate700 : AppColors.slate200,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          app.t(en: 'All categories', ur: 'تمام زمرے'),
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    itemCount: categories.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, i) {
+                      final c = Map<String, dynamic>.from(categories[i] as Map);
+                      final name = app.isUrdu
+                          ? '${c['name_ur'] ?? c['name'] ?? ''}'
+                          : '${c['name_en'] ?? c['name'] ?? ''}';
+                      final color = _colorFor(i);
+                      return Material(
+                        color: isDark ? AppColors.slate700 : AppColors.slate50,
+                        borderRadius: BorderRadius.circular(12),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            Navigator.of(ctx).pop();
+                            _openCategory(c, app);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDark ? AppColors.slate700 : const Color(0xFFE6EEEA),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 34,
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    color: color.withValues(alpha: isDark ? 0.25 : 0.14),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(Icons.grid_view_rounded, size: 18, color: color),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    name,
+                                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: isDark ? Colors.white54 : AppColors.slate500,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final categories = List<dynamic>.from(
+      (_data?['categories'] as List?) ??
+          (_data?['popular_categories'] as List?) ??
+          const [],
+    );
 
     return Scaffold(
       body: RefreshIndicator(
@@ -111,90 +264,28 @@ class _HomeScreenState extends State<HomeScreen> {
                           isDark: isDark,
                           searchCtrl: _searchCtrl,
                           onSearch: _openDirectorySearch,
+                          signatureUr: _signatureUr,
                         ),
                       ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                          child: Text(
-                            app.t(en: 'Browse categories', ur: 'زمرے دیکھیں'),
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                      if (categories.isNotEmpty)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                            child: _HomeCategoriesBox(
+                              app: app,
+                              isDark: isDark,
+                              categories: categories,
+                              featuredCount: _featuredCount,
+                              colorFor: _colorFor,
+                              onOpen: (c) => _openCategory(c, app),
+                              onViewMore: () => _openAllCategoriesSheet(app, isDark, categories),
+                              onBrowseAll: () => ShellScope.maybeOf(context)?.goToTab(1),
+                            ),
                           ),
                         ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: SizedBox(
-                          height: 108,
-                          child: ListView.separated(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            scrollDirection: Axis.horizontal,
-                            itemCount: ((_data?['popular_categories'] as List?) ?? []).length,
-                            separatorBuilder: (context, index) => const SizedBox(width: 10),
-                            itemBuilder: (context, i) {
-                              final c = (_data!['popular_categories'] as List)[i] as Map<String, dynamic>;
-                              final name = app.isUrdu ? '${c['name_ur'] ?? c['name']}' : '${c['name_en'] ?? c['name']}';
-                              final colors = [
-                                (AppColors.emerald, AppColors.tealSoft),
-                                (AppColors.sky, const Color(0xFFE0F2FE)),
-                                (AppColors.amber, const Color(0xFFFEF3C7)),
-                                (const Color(0xFF8B5CF6), const Color(0xFFEDE9FE)),
-                              ];
-                              final pair = colors[i % colors.length];
-                              return Material(
-                                color: isDark ? AppColors.slate800 : Colors.white,
-                                borderRadius: BorderRadius.circular(18),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(18),
-                                  onTap: () {
-                                    final id = '${c['id'] ?? c['slug'] ?? ''}';
-                                    if (id.isEmpty) return;
-                                    Navigator.of(context).push(MaterialPageRoute(
-                                      builder: (_) => CategoryListingScreen(
-                                        categoryId: id,
-                                        categoryName: name,
-                                      ),
-                                    ));
-                                  },
-                                  child: Container(
-                                    width: 132,
-                                    padding: const EdgeInsets.all(14),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(18),
-                                      border: Border.all(
-                                        color: isDark ? AppColors.slate700 : const Color(0xFFE6EEEA),
-                                      ),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          width: 36,
-                                          height: 36,
-                                          decoration: BoxDecoration(
-                                            color: isDark ? pair.$1.withValues(alpha: 0.2) : pair.$2,
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Icon(Icons.grid_view_rounded, color: pair.$1, size: 18),
-                                        ),
-                                        const Spacer(),
-                                        Text(
-                                          name,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, height: 1.2),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 24, 16, 10),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
                           child: Text(
                             app.t(en: 'Latest listings', ur: 'تازہ فہرستیں'),
                             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
@@ -234,12 +325,14 @@ class _HomeHeader extends StatelessWidget {
     required this.isDark,
     required this.searchCtrl,
     required this.onSearch,
+    required this.signatureUr,
   });
 
   final AppState app;
   final bool isDark;
   final TextEditingController searchCtrl;
   final ValueChanged<String?> onSearch;
+  final String signatureUr;
 
   @override
   Widget build(BuildContext context) {
@@ -307,7 +400,21 @@ class _HomeHeader extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          child: Text(
+            signatureUr,
+            textAlign: TextAlign.center,
+            textDirection: TextDirection.rtl,
+            style: const TextStyle(
+              color: AppColors.emerald,
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              height: 1.45,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Material(
             elevation: 2,
             shadowColor: Colors.black26,
@@ -344,6 +451,207 @@ class _HomeHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _HomeCategoriesBox extends StatelessWidget {
+  const _HomeCategoriesBox({
+    required this.app,
+    required this.isDark,
+    required this.categories,
+    required this.featuredCount,
+    required this.colorFor,
+    required this.onOpen,
+    required this.onViewMore,
+    required this.onBrowseAll,
+  });
+
+  final AppState app;
+  final bool isDark;
+  final List<dynamic> categories;
+  final int featuredCount;
+  final Color Function(int) colorFor;
+  final ValueChanged<Map<String, dynamic>> onOpen;
+  final VoidCallback onViewMore;
+  final VoidCallback onBrowseAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final remaining = categories.length > featuredCount ? categories.length - featuredCount : 0;
+    final visible = categories.take(featuredCount).toList();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.slate800 : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: isDark ? AppColors.slate700 : const Color(0xFFE6EEEA)),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.emerald.withValues(alpha: 0.2) : AppColors.tealSoft,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.category_rounded, size: 16, color: AppColors.emeraldDark),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  app.t(en: 'Browse categories', ur: 'زمرے دیکھیں'),
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Material(
+            color: isDark ? AppColors.emerald.withValues(alpha: 0.18) : AppColors.tealSoft,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: onBrowseAll,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.emerald.withValues(alpha: 0.35)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.storefront_rounded,
+                      size: 18,
+                      color: isDark ? AppColors.emeraldLight : AppColors.emeraldDark,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        app.t(en: 'All directory categories', ur: 'ڈائریکٹری کے تمام زمرے'),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: isDark ? AppColors.emeraldLight : AppColors.emeraldDark,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 16,
+                      color: isDark ? AppColors.emeraldLight : AppColors.emeraldDark,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: visible.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 2.55,
+            ),
+            itemBuilder: (context, i) {
+              final c = Map<String, dynamic>.from(visible[i] as Map);
+              final name = app.isUrdu
+                  ? '${c['name_ur'] ?? c['name'] ?? ''}'
+                  : '${c['name_en'] ?? c['name'] ?? ''}';
+              final color = colorFor(i);
+              return Material(
+                color: isDark ? AppColors.slate700 : AppColors.slate50,
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () => onOpen(c),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? AppColors.slate700 : const Color(0xFFE6EEEA),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: isDark ? 0.25 : 0.15),
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          child: Icon(Icons.grid_view_rounded, size: 16, color: color),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                              height: 1.15,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          if (remaining > 0) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onViewMore,
+                icon: const Icon(Icons.grid_view_rounded, size: 18),
+                label: Text(
+                  app.t(
+                    en: 'Click to view more ($remaining)',
+                    ur: 'مزید دیکھنے کے لیے کلک کریں ($remaining)',
+                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.emeraldDark,
+                  side: BorderSide(color: isDark ? AppColors.slate700 : const Color(0xFFD1E7DD)),
+                  backgroundColor: isDark ? AppColors.emerald.withValues(alpha: 0.12) : AppColors.tealSoft,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

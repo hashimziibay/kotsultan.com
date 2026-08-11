@@ -29,7 +29,16 @@ class HomeController extends BaseApiController
             $categoryTotals[(int) $row['category_id']] = (int) $row['total'];
         }
 
-        $popular = array_slice($categories, 0, 8);
+        // App home shows a featured subset + "view more" for the rest — return all active categories.
+        $mappedCategories = array_map(fn ($c) => [
+            'id'             => (int) $c['id'],
+            'slug'           => $c['slug'] ?? null,
+            'name'           => $c['display_name'] ?? ($c['name_en'] ?? ''),
+            'name_en'        => $c['name_en'] ?? '',
+            'name_ur'        => $c['name_ur'] ?? '',
+            'icon'           => $c['icon'] ?? 'folder',
+            'business_count' => $categoryTotals[(int) $c['id']] ?? 0,
+        ], $categories);
 
         return $this->jsonOk([
             'locale' => $locale,
@@ -38,15 +47,8 @@ class HomeController extends BaseApiController
                 'categories_count' => count($categories),
                 'wall_count'       => count($wallModel->getActiveWallEntries()),
             ],
-            'popular_categories' => array_map(fn ($c) => [
-                'id'             => (int) $c['id'],
-                'slug'           => $c['slug'] ?? null,
-                'name'           => $c['display_name'] ?? ($c['name_en'] ?? ''),
-                'name_en'        => $c['name_en'] ?? '',
-                'name_ur'        => $c['name_ur'] ?? '',
-                'icon'           => $c['icon'] ?? 'folder',
-                'business_count' => $categoryTotals[(int) $c['id']] ?? 0,
-            ], $popular),
+            'popular_categories' => $mappedCategories,
+            'categories'         => $mappedCategories,
             'recent_businesses'  => array_map([$this, 'mapBusinessCard'], $recent),
         ]);
     }

@@ -26,10 +26,14 @@ class AuthController extends BaseController
         $cache   = \Config\Services::cache();
         $ip      = $this->request->getIPAddress();
         $cacheKey = 'admin_login_attempts_' . md5($ip);
-        
-        $attempts = (int) $cache->get($cacheKey);
-        if ($attempts >= 5) {
-            return redirect()->back()->with('error', lang('App.admin_msg_lockout'));
+        // Rate-limit only in production so local/dev lockouts are easy to clear.
+        $rateLimit = ENVIRONMENT === 'production';
+
+        if ($rateLimit) {
+            $attempts = (int) $cache->get($cacheKey);
+            if ($attempts >= 5) {
+                return redirect()->back()->with('error', lang('App.admin_msg_lockout'));
+            }
         }
 
         $login    = trim((string) $this->request->getPost('username'));
@@ -43,7 +47,10 @@ class AuthController extends BaseController
         $user       = $adminModel->verifyCredentials($login, $password);
 
         if (!$user) {
-            $cache->save($cacheKey, $attempts + 1, 900); // Lockout for 15 mins (900s)
+            if ($rateLimit) {
+                $attempts = (int) $cache->get($cacheKey);
+                $cache->save($cacheKey, $attempts + 1, 900); // Lockout for 15 mins (900s)
+            }
             return redirect()->back()->with('error', lang('App.admin_msg_invalid_credentials'));
         }
 

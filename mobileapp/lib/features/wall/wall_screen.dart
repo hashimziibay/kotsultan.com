@@ -24,7 +24,6 @@ class _WallScreenState extends State<WallScreen> {
   Timer? _debounce;
   bool _loading = true;
   bool _fromCache = false;
-  bool _showAllCategories = false;
   String? _error;
   List<dynamic> _items = [];
   List<dynamic> _categories = [];
@@ -214,12 +213,11 @@ class _WallScreenState extends State<WallScreen> {
                 isDark: isDark,
                 categories: _categories,
                 selectedKey: _category,
-                showAll: _showAllCategories,
                 featuredCount: _featuredCount,
                 iconFor: _iconFor,
                 colorFor: _colorFor,
                 onSelect: _selectCategory,
-                onToggleMore: () => setState(() => _showAllCategories = !_showAllCategories),
+                onViewMore: () => _openAllCategoriesSheet(app, isDark),
               ),
             ),
           Expanded(
@@ -316,6 +314,97 @@ class _WallScreenState extends State<WallScreen> {
       ),
     );
   }
+
+  Future<void> _openAllCategoriesSheet(AppState app, bool isDark) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? AppColors.slate800 : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) {
+        final maxH = MediaQuery.sizeOf(ctx).height * 0.72;
+        return SafeArea(
+          child: SizedBox(
+            height: maxH,
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.slate700 : AppColors.slate200,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          app.t(en: 'All categories', ur: 'تمام زمرے'),
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    itemCount: _categories.length + 1,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, i) {
+                      if (i == 0) {
+                        final selected = _category == null;
+                        return _AllTile(
+                          app: app,
+                          isDark: isDark,
+                          selected: selected,
+                          onTap: () {
+                            Navigator.of(ctx).pop();
+                            _selectCategory(null);
+                          },
+                        );
+                      }
+                      final c = Map<String, dynamic>.from(_categories[i - 1] as Map);
+                      final id = '${c['id']}';
+                      final slug = '${c['slug'] ?? ''}'.trim();
+                      final key = slug.isNotEmpty ? slug : id;
+                      final label = app.isUrdu
+                          ? '${c['name_ur'] ?? c['name_en'] ?? c['name'] ?? ''}'
+                          : '${c['name_en'] ?? c['name_ur'] ?? c['name'] ?? ''}';
+                      final color = _colorFor('${c['color'] ?? ''}', i - 1);
+                      final selected = _category == key || _category == id;
+                      return _CategoryTile(
+                        label: label,
+                        icon: _iconFor('${c['icon'] ?? c['slug'] ?? ''}'),
+                        color: color,
+                        selected: selected,
+                        isDark: isDark,
+                        onTap: () {
+                          Navigator.of(ctx).pop();
+                          _selectCategory(key);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _CategoriesBox extends StatelessWidget {
@@ -324,31 +413,28 @@ class _CategoriesBox extends StatelessWidget {
     required this.isDark,
     required this.categories,
     required this.selectedKey,
-    required this.showAll,
     required this.featuredCount,
     required this.iconFor,
     required this.colorFor,
     required this.onSelect,
-    required this.onToggleMore,
+    required this.onViewMore,
   });
 
   final AppState app;
   final bool isDark;
   final List<dynamic> categories;
   final String? selectedKey;
-  final bool showAll;
   final int featuredCount;
   final IconData Function(String?) iconFor;
   final Color Function(String?, int) colorFor;
   final ValueChanged<String?> onSelect;
-  final VoidCallback onToggleMore;
+  final VoidCallback onViewMore;
 
   @override
   Widget build(BuildContext context) {
     final remaining = categories.length > featuredCount ? categories.length - featuredCount : 0;
-    final visible = showAll ? categories : categories.take(featuredCount).toList();
-    final selectedInHidden = !showAll &&
-        selectedKey != null &&
+    final visible = categories.take(featuredCount).toList();
+    final selectedInHidden = selectedKey != null &&
         !visible.any((raw) {
           final c = Map<String, dynamic>.from(raw as Map);
           final id = '${c['id']}';
@@ -376,6 +462,7 @@ class _CategoriesBox extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
@@ -449,23 +536,18 @@ class _CategoriesBox extends StatelessWidget {
               );
             },
           ),
-          if (remaining > 0 || showAll) ...[
+          if (remaining > 0) ...[
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: onToggleMore,
-                icon: Icon(
-                  showAll ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-                  size: 18,
-                ),
+                onPressed: onViewMore,
+                icon: const Icon(Icons.grid_view_rounded, size: 18),
                 label: Text(
-                  showAll
-                      ? app.t(en: 'Show less', ur: 'کم دکھائیں')
-                      : app.t(
-                          en: 'Click to view more ($remaining)',
-                          ur: 'مزید دیکھنے کے لیے کلک کریں ($remaining)',
-                        ),
+                  app.t(
+                    en: 'Click to view more ($remaining)',
+                    ur: 'مزید دیکھنے کے لیے کلک کریں ($remaining)',
+                  ),
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                 ),
                 style: OutlinedButton.styleFrom(
@@ -483,7 +565,7 @@ class _CategoriesBox extends StatelessWidget {
               padding: const EdgeInsets.only(top: 6),
               child: Text(
                 app.t(
-                  en: 'Selected category is under “view more”.',
+                  en: 'Selected category is in “view more”.',
                   ur: 'منتخب زمرہ ”مزید دیکھیں“ میں ہے۔',
                 ),
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
