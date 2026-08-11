@@ -238,8 +238,7 @@ class WallModel extends Model
     }
 
     /**
-     * Supported social / profile platforms for wall personalities.
-     * Admin can pick any of these dynamically per link; "other" allows a custom label.
+     * Social networks only (not generic website / news links).
      *
      * @return array<string, array{label:string,icon:string}>
      */
@@ -258,23 +257,32 @@ class WallModel extends Model
             'snapchat'  => ['label' => 'Snapchat',  'icon' => 'ghost'],
             'pinterest' => ['label' => 'Pinterest', 'icon' => 'pin'],
             'github'    => ['label' => 'GitHub',    'icon' => 'github'],
-            'website'   => ['label' => 'Website',   'icon' => 'globe'],
-            'other'     => ['label' => 'Other / Custom', 'icon' => 'link-2'],
         ];
     }
 
-    public static function normalizePlatform(?string $platform): string
+    public static function isSocialPlatform(?string $platform): bool
+    {
+        $key = self::normalizePlatform($platform, false);
+        return $key !== '' && isset(self::socialPlatforms()[$key]);
+    }
+
+    public static function normalizePlatform(?string $platform, bool $fallbackOther = true): string
     {
         $key = strtolower(trim((string) $platform));
         if ($key === 'twitter') {
             $key = 'x';
         }
-        $platforms = self::socialPlatforms();
-        return isset($platforms[$key]) ? $key : 'other';
+        if ($key === 'website' || $key === 'other' || $key === 'external') {
+            return $key === 'external' ? 'website' : $key;
+        }
+        if (isset(self::socialPlatforms()[$key])) {
+            return $key;
+        }
+        return $fallbackOther ? 'other' : '';
     }
 
     /**
-     * @return list<array{url:string,title:string,platform:string,icon:string,label:string}>
+     * @return list<array{url:string,title:string,platform:string,icon:string,label:string,kind:string}>
      */
     public static function decodeExternalLinks(?string $json): array
     {
@@ -285,21 +293,21 @@ class WallModel extends Model
         if (! is_array($decoded)) {
             return [];
         }
-        $platforms = self::socialPlatforms();
-        $out = [];
+        $social = self::socialPlatforms();
+        $out    = [];
         foreach ($decoded as $row) {
             if (is_string($row)) {
                 $url = trim($row);
                 if ($url === '') {
                     continue;
                 }
-                $meta = $platforms['website'];
                 $out[] = [
                     'url'      => $url,
-                    'title'    => $meta['label'],
+                    'title'    => $url,
                     'platform' => 'website',
-                    'icon'     => $meta['icon'],
-                    'label'    => $meta['label'],
+                    'icon'     => 'globe',
+                    'label'    => 'Website',
+                    'kind'     => 'external',
                 ];
                 continue;
             }
@@ -310,25 +318,107 @@ class WallModel extends Model
             if ($url === '') {
                 continue;
             }
-            $platform = self::normalizePlatform((string) ($row['platform'] ?? ''));
-            // Infer platform from URL when older rows have no platform.
-            if ($platform === 'other' && empty($row['platform'])) {
-                $platform = self::inferPlatformFromUrl($url);
+
+            $kindRaw = strtolower(trim((string) ($row['kind'] ?? $row['type'] ?? '')));
+            $platformRaw = trim((string) ($row['platform'] ?? ''));
+
+            if ($kindRaw === 'social' || ($platformRaw !== '' && self::isSocialPlatform($platformRaw))) {
+                $platform = self::normalizePlatform($platformRaw !== '' ? $platformRaw : self::inferPlatformFromUrl($url));
+                if (! self::isSocialPlatform($platform)) {
+                    // Forced social kind but unknown platform — still social with generic icon.
+                    $platform = $platformRaw !== '' ? self::normalizePlatform($platformRaw) : 'other';
+                    $meta = ['label' => 'Social', 'icon' => 'share-2'];
+                    if (isset($social[$platform])) {
+                        $meta = $social[$platform];
+                    }
+                } else {
+                    $meta = $social[$platform];
+                }
+                $title = trim((string) ($row['title'] ?? $row['name'] ?? ''));
+                if ($title === '') {
+                    $title = $meta['label'];
+                }
+                $out[] = [
+                    'url'      => $url,
+                    'title'    => $title,
+                    'platform' => $platform,
+                    'icon'     => $meta['icon'],
+                    'label'    => $meta['label'],
+                    'kind'     => 'social',
+                ];
+                continue;
             }
-            $meta  = $platforms[$platform] ?? $platforms['other'];
-            $title = trim((string) ($row['title'] ?? $row['name'] ?? ''));
-            if ($title === '') {
-                $title = $meta['label'];
+
+            // External / website / news / other non-social links
+            if ($kindRaw === 'external' || $platformRaw === '' || in_array($platformRaw, ['website', 'other', 'external'], true)) {
+                // If URL is clearly a social network and no explicit external kind, treat as social.
+                if ($kindRaw === '' && $platformRaw === '') {
+                    $inferred = self::inferPlatformFromUrl($url);
+                    if (self::isSocialPlatform($inferred)) {
+                        $meta  = $social[$inferred];
+                        $title = trim((string) ($row['title'] ?? $row['name'] ?? ''));
+                        if ($title === '') {
+                            $title = $meta['label'];
+                        }
+                        $out[] = [
+                            'url'      => $url,
+                            'title'    => $title,
+                            'platform' => $inferred,
+                            'icon'     => $meta['icon'],
+                            'label'    => $meta['label'],
+                            'kind'     => 'social',
+                        ];
+                        continue;
+                    }
+                }
+
+                $title = trim((string) ($row['title'] ?? $row['name'] ?? ''));
+                if ($title === '' || $title === 'Website' || $title === 'Other / Custom') {
+                    // Prefer host as readable title when old rows used platform label or URL-as-title.
+                    $host = (string) (parse_url($url, PHP_URL_HOST) ?? '');
+                    $title = $host !== '' ? preg_replace('/^www\./', '', $host) : $url;
+                }
+                $out[] = [
+                    'url'      => $url,
+                    'title'    => $title,
+                    'platform' => 'website',
+                    'icon'     => 'globe',
+                    'label'    => 'Website',
+                    'kind'     => 'external',
+                ];
+                continue;
             }
+
+            // Unknown platform key → external
+            $title = trim((string) ($row['title'] ?? $row['name'] ?? $url));
             $out[] = [
                 'url'      => $url,
-                'title'    => $title,
-                'platform' => $platform,
-                'icon'     => $meta['icon'],
-                'label'    => $meta['label'],
+                'title'    => $title !== '' ? $title : $url,
+                'platform' => 'website',
+                'icon'     => 'globe',
+                'label'    => 'Website',
+                'kind'     => 'external',
             ];
         }
         return $out;
+    }
+
+    /**
+     * @return array{external:list<array>,social:list<array>}
+     */
+    public static function partitionLinks(?string $json): array
+    {
+        $all = self::decodeExternalLinks($json);
+        $external = [];
+        $social   = [];
+        foreach ($all as $link) {
+            if (($link['kind'] ?? '') === 'social') {
+                $social[] = $link;
+            } else {
+                $external[] = $link;
+            }
+        }
+        return ['external' => $external, 'social' => $social];
     }
 
     public static function inferPlatformFromUrl(string $url): string

@@ -60,9 +60,12 @@ class WallController extends BaseApiController
             $attachments = [];
         }
 
+        $partitioned = \App\Models\WallModel::partitionLinks($entry['external_links'] ?? null);
+
         return $this->jsonOk([
             'entry'       => $this->mapEntry($entry, true) + [
-                'external_links' => $this->mapExternalLinks($entry['external_links'] ?? null),
+                'external_links' => array_map([$this, 'mapOneLink'], $partitioned['external']),
+                'social_links'   => array_map([$this, 'mapOneLink'], $partitioned['social']),
                 'attachments' => array_map(function (array $a) {
                     return [
                         'id'            => (int) ($a['id'] ?? 0),
@@ -79,23 +82,29 @@ class WallController extends BaseApiController
     }
 
     /**
-     * @return list<array{url:string,title:string}>
+     * @param array{url?:string,title?:string,platform?:string,icon?:string,label?:string,kind?:string} $link
+     * @return array{platform:string,label:string,title:string,icon:string,url:string,kind:string}
+     */
+    private function mapOneLink(array $link): array
+    {
+        return [
+            'platform' => $link['platform'] ?? 'website',
+            'label'    => $link['label'] ?? ($link['title'] ?? 'Link'),
+            'title'    => $link['title'] ?? ($link['label'] ?? 'Link'),
+            'icon'     => $link['icon'] ?? 'link-2',
+            'url'      => $link['url'] ?? '',
+            'kind'     => $link['kind'] ?? 'external',
+        ];
+    }
+
+    /**
+     * @return list<array{platform:string,label:string,title:string,icon:string,url:string,kind:string}>
      */
     private function mapExternalLinks($json): array
     {
-        $links = \App\Models\WallModel::decodeExternalLinks(
+        return array_map([$this, 'mapOneLink'], \App\Models\WallModel::decodeExternalLinks(
             $json === null ? null : (string) $json
-        );
-
-        return array_map(static function (array $link) {
-            return [
-                'platform' => $link['platform'] ?? 'other',
-                'label'    => $link['label'] ?? ($link['title'] ?? 'Link'),
-                'title'    => $link['title'] ?? ($link['label'] ?? 'Link'),
-                'icon'     => $link['icon'] ?? 'link-2',
-                'url'      => $link['url'] ?? '',
-            ];
-        }, $links);
+        ));
     }
 
     private function mapEntry(array $e, bool $detail = false): array

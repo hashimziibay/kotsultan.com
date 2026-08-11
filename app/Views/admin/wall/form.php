@@ -134,51 +134,97 @@
             <div class="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <h4 class="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider"><?= lang('App.admin_social_links') ?></h4>
-                        <p class="text-[11px] text-slate-500 mt-1"><?= lang('App.admin_social_links_hint') ?></p>
+                        <h4 class="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider"><?= lang('App.admin_external_links') ?></h4>
+                        <p class="text-[11px] text-slate-500 mt-1"><?= lang('App.admin_external_links_hint') ?></p>
                     </div>
-                    <button type="button" id="add-link-row" class="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800">
-                        + <?= lang('App.admin_add_social_link') ?>
+                    <button type="button" id="add-ext-link-row" class="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800">
+                        + <?= lang('App.admin_add_link') ?>
                     </button>
                 </div>
 
                 <?php
                     $socialPlatforms = \App\Models\WallModel::socialPlatforms();
-                    $externalLinks = \App\Models\WallModel::decodeExternalLinks(
+                    $partitioned = \App\Models\WallModel::partitionLinks(
                         isset($person['external_links']) ? (string) $person['external_links'] : null
                     );
-                    if ($externalLinks === []) {
-                        $externalLinks = [['platform' => '', 'title' => '', 'url' => '']];
+                    $webLinks = $partitioned['external'];
+                    $socialLinks = $partitioned['social'];
+                    if ($webLinks === []) {
+                        $webLinks = [['title' => '', 'url' => '']];
+                    }
+                    if ($socialLinks === []) {
+                        $socialLinks = [['platform' => '', 'title' => '', 'url' => '']];
                     }
                 ?>
-                <div id="link-rows" class="space-y-2">
-                    <?php foreach ($externalLinks as $link): ?>
-                    <div class="link-row grid grid-cols-1 sm:grid-cols-[minmax(9rem,0.9fr)_1.2fr_1fr_auto] gap-2">
-                        <select name="link_platform[]"
-                                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
-                            <option value=""><?= esc(lang('App.admin_select_platform')) ?></option>
-                            <?php foreach ($socialPlatforms as $key => $meta): ?>
-                                <option value="<?= esc($key) ?>" <?= (($link['platform'] ?? '') === $key) ? 'selected' : '' ?>>
-                                    <?= esc($meta['label']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <input type="text" name="link_url[]" value="<?= esc($link['url'] ?? '') ?>"
-                               placeholder="https://..."
-                               inputmode="url" autocomplete="url"
-                               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
-                        <?php
-                            $storedTitle = (string) ($link['title'] ?? '');
-                            $platformLabel = (string) ($link['label'] ?? '');
-                            $showCustomTitle = (($link['platform'] ?? '') === 'other')
-                                || ($storedTitle !== '' && $storedTitle !== $platformLabel);
-                        ?>
-                        <input type="text" name="link_title[]" value="<?= esc($showCustomTitle ? $storedTitle : '') ?>"
-                               placeholder="<?= esc(lang('App.admin_link_label_placeholder')) ?>"
-                               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
-                        <button type="button" class="remove-link-row px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold border border-transparent hover:border-rose-200">
-                            <?= lang('App.admin_remove') ?>
-                        </button>
+                <div id="ext-link-rows" class="space-y-2">
+                    <?php foreach ($webLinks as $link): ?>
+                    <div class="ext-link-row rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3 space-y-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1"><?= lang('App.admin_link_url_label') ?></label>
+                                <input type="text" name="ext_link_url[]" value="<?= esc($link['url'] ?? '') ?>"
+                                       placeholder="https://example.com/article"
+                                       inputmode="url" autocomplete="url"
+                                       class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                            </div>
+                            <div class="flex sm:items-end">
+                                <button type="button" class="remove-ext-link-row w-full sm:w-auto px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold border border-transparent hover:border-rose-200">
+                                    <?= lang('App.admin_remove') ?>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1"><?= lang('App.admin_link_title_label') ?></label>
+                            <input type="text" name="ext_link_title[]" value="<?= esc($link['title'] ?? '') ?>"
+                                   placeholder="<?= esc(lang('App.admin_link_title_placeholder')) ?>"
+                                   class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h4 class="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider"><?= lang('App.admin_social_links') ?></h4>
+                        <p class="text-[11px] text-slate-500 mt-1"><?= lang('App.admin_social_links_hint') ?></p>
+                    </div>
+                    <button type="button" id="add-social-link-row" class="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800">
+                        + <?= lang('App.admin_add_social_link') ?>
+                    </button>
+                </div>
+
+                <div id="social-link-rows" class="space-y-2">
+                    <?php foreach ($socialLinks as $link): ?>
+                    <div class="social-link-row rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3 space-y-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-[minmax(10rem,0.8fr)_1.4fr_auto] gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1"><?= lang('App.admin_select_platform') ?></label>
+                                <select name="social_link_platform[]"
+                                        class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                                    <option value=""><?= esc(lang('App.admin_select_platform')) ?></option>
+                                    <?php foreach ($socialPlatforms as $key => $meta): ?>
+                                        <option value="<?= esc($key) ?>" <?= (($link['platform'] ?? '') === $key) ? 'selected' : '' ?>>
+                                            <?= esc($meta['label']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1"><?= lang('App.admin_link_url_label') ?></label>
+                                <input type="text" name="social_link_url[]" value="<?= esc($link['url'] ?? '') ?>"
+                                       placeholder="https://..."
+                                       inputmode="url" autocomplete="url"
+                                       class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                            </div>
+                            <div class="flex sm:items-end">
+                                <button type="button" class="remove-social-link-row w-full sm:w-auto px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold border border-transparent hover:border-rose-200">
+                                    <?= lang('App.admin_remove') ?>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="hidden" name="social_link_title[]" value="">
                     </div>
                     <?php endforeach; ?>
                 </div>
@@ -264,62 +310,122 @@
     });
   }
 
-  const linksBox = document.getElementById('link-rows');
-  const addLinkBtn = document.getElementById('add-link-row');
   const removeLabel = <?= json_encode(lang('App.admin_remove')) ?>;
-  const labelPlaceholder = <?= json_encode(lang('App.admin_link_label_placeholder')) ?>;
+  const titlePlaceholder = <?= json_encode(lang('App.admin_link_title_placeholder')) ?>;
+  const urlLabel = <?= json_encode(lang('App.admin_link_url_label')) ?>;
+  const titleLabel = <?= json_encode(lang('App.admin_link_title_label')) ?>;
   const selectPlatformLabel = <?= json_encode(lang('App.admin_select_platform')) ?>;
   const platforms = <?= json_encode($socialPlatforms, JSON_UNESCAPED_UNICODE) ?>;
 
   function platformOptionsHtml(selected) {
-    let html = `<option value="">${selectPlatformLabel.replace(/</g, '&lt;')}</option>`;
+    let html = `<option value="">${String(selectPlatformLabel).replace(/</g, '&lt;')}</option>`;
     Object.keys(platforms).forEach((key) => {
       const label = platforms[key].label || key;
       const sel = selected === key ? ' selected' : '';
-      html += `<option value="${key}"${sel}>${label.replace(/</g, '&lt;')}</option>`;
+      html += `<option value="${key}"${sel}>${String(label).replace(/</g, '&lt;')}</option>`;
     });
     return html;
   }
 
-  function bindRemove(btn) {
-    btn.addEventListener('click', () => {
-      if (!linksBox) return;
-      const rows = linksBox.querySelectorAll('.link-row');
-      if (rows.length <= 1) {
-        const row = rows[0];
-        if (!row) return;
-        row.querySelectorAll('input').forEach((el) => { el.value = ''; });
-        const sel = row.querySelector('select');
-        if (sel) sel.selectedIndex = 0;
-        return;
-      }
-      btn.closest('.link-row')?.remove();
+  function bindRowRemove(box, rowSelector, btnSelector, clearFn) {
+    if (!box) return;
+    box.querySelectorAll(btnSelector).forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const rows = box.querySelectorAll(rowSelector);
+        if (rows.length <= 1) {
+          clearFn(rows[0]);
+          return;
+        }
+        btn.closest(rowSelector)?.remove();
+      });
     });
   }
 
-  if (linksBox) {
-    linksBox.querySelectorAll('.remove-link-row').forEach(bindRemove);
+  const extBox = document.getElementById('ext-link-rows');
+  const addExtBtn = document.getElementById('add-ext-link-row');
+  bindRowRemove(extBox, '.ext-link-row', '.remove-ext-link-row', (row) => {
+    if (!row) return;
+    row.querySelectorAll('input').forEach((el) => { el.value = ''; });
+  });
+  if (addExtBtn && extBox) {
+    addExtBtn.addEventListener('click', () => {
+      const row = document.createElement('div');
+      row.className = 'ext-link-row rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3 space-y-2';
+      row.innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">${String(urlLabel).replace(/</g, '&lt;')}</label>
+            <input type="text" name="ext_link_url[]" value="" placeholder="https://example.com/article"
+                   inputmode="url" autocomplete="url"
+                   class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+          </div>
+          <div class="flex sm:items-end">
+            <button type="button" class="remove-ext-link-row w-full sm:w-auto px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold border border-transparent hover:border-rose-200">${removeLabel}</button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">${String(titleLabel).replace(/</g, '&lt;')}</label>
+          <input type="text" name="ext_link_title[]" value="" placeholder="${String(titlePlaceholder).replace(/"/g, '&quot;')}"
+                 class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+        </div>
+      `;
+      extBox.appendChild(row);
+      bindRowRemove(row, '.ext-link-row', '.remove-ext-link-row', () => {});
+      row.querySelector('.remove-ext-link-row')?.addEventListener('click', () => {
+        const rows = extBox.querySelectorAll('.ext-link-row');
+        if (rows.length <= 1) {
+          row.querySelectorAll('input').forEach((el) => { el.value = ''; });
+          return;
+        }
+        row.remove();
+      });
+    });
   }
 
-  if (addLinkBtn && linksBox) {
-    addLinkBtn.addEventListener('click', () => {
+  const socialBox = document.getElementById('social-link-rows');
+  const addSocialBtn = document.getElementById('add-social-link-row');
+  bindRowRemove(socialBox, '.social-link-row', '.remove-social-link-row', (row) => {
+    if (!row) return;
+    row.querySelectorAll('input').forEach((el) => { el.value = ''; });
+    const sel = row.querySelector('select');
+    if (sel) sel.selectedIndex = 0;
+  });
+  if (addSocialBtn && socialBox) {
+    addSocialBtn.addEventListener('click', () => {
       const row = document.createElement('div');
-      row.className = 'link-row grid grid-cols-1 sm:grid-cols-[minmax(9rem,0.9fr)_1.2fr_1fr_auto] gap-2';
+      row.className = 'social-link-row rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3 space-y-2';
       row.innerHTML = `
-        <select name="link_platform[]"
-                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
-          ${platformOptionsHtml('')}
-        </select>
-        <input type="text" name="link_url[]" value="" placeholder="https://..."
-               inputmode="url" autocomplete="url"
-               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
-        <input type="text" name="link_title[]" value="" placeholder="${labelPlaceholder.replace(/"/g, '&quot;')}"
-               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
-        <button type="button" class="remove-link-row px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold border border-transparent hover:border-rose-200">${removeLabel}</button>
+        <div class="grid grid-cols-1 sm:grid-cols-[minmax(10rem,0.8fr)_1.4fr_auto] gap-2">
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">${String(selectPlatformLabel).replace(/</g, '&lt;')}</label>
+            <select name="social_link_platform[]"
+                    class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+              ${platformOptionsHtml('')}
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">${String(urlLabel).replace(/</g, '&lt;')}</label>
+            <input type="text" name="social_link_url[]" value="" placeholder="https://..."
+                   inputmode="url" autocomplete="url"
+                   class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+          </div>
+          <div class="flex sm:items-end">
+            <button type="button" class="remove-social-link-row w-full sm:w-auto px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold border border-transparent hover:border-rose-200">${removeLabel}</button>
+          </div>
+        </div>
+        <input type="hidden" name="social_link_title[]" value="">
       `;
-      linksBox.appendChild(row);
-      const removeBtn = row.querySelector('.remove-link-row');
-      if (removeBtn) bindRemove(removeBtn);
+      socialBox.appendChild(row);
+      row.querySelector('.remove-social-link-row')?.addEventListener('click', () => {
+        const rows = socialBox.querySelectorAll('.social-link-row');
+        if (rows.length <= 1) {
+          row.querySelectorAll('input').forEach((el) => { el.value = ''; });
+          const sel = row.querySelector('select');
+          if (sel) sel.selectedIndex = 0;
+          return;
+        }
+        row.remove();
+      });
     });
   }
 })();

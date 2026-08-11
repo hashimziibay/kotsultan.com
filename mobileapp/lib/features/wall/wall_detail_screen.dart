@@ -56,10 +56,8 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
     return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
   }
 
-  List<Map<String, dynamic>> get _externalLinks {
-    final raw = _entry?['external_links'];
+  List<Map<String, dynamic>> _parseLinkList(dynamic raw) {
     List<dynamic> list = const [];
-
     if (raw is List) {
       list = raw;
     } else if (raw is String && raw.trim().isNotEmpty) {
@@ -78,7 +76,7 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
       if (item is String) {
         final url = item.trim();
         if (url.isEmpty) continue;
-        out.add({'url': url, 'title': 'Website', 'platform': 'website', 'label': 'Website'});
+        out.add({'url': url, 'title': url, 'platform': 'website', 'label': 'Website', 'kind': 'external'});
         continue;
       }
       if (item is! Map) continue;
@@ -88,14 +86,33 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
       final platform = '${m['platform'] ?? ''}'.trim().toLowerCase();
       final label = '${m['label'] ?? ''}'.trim();
       final title = '${m['title'] ?? m['name'] ?? label}'.trim();
+      final kind = '${m['kind'] ?? m['type'] ?? ''}'.trim().toLowerCase();
       out.add({
         'url': url,
         'title': title.isEmpty ? (label.isEmpty ? url : label) : title,
-        'platform': platform.isEmpty ? 'other' : platform,
+        'platform': platform.isEmpty ? 'website' : platform,
         'label': label.isEmpty ? title : label,
+        'kind': kind.isEmpty ? 'external' : kind,
       });
     }
     return out;
+  }
+
+  List<Map<String, dynamic>> get _externalLinks {
+    final fromApi = _parseLinkList(_entry?['external_links']);
+    // Back-compat: if API only sent combined list, keep non-social here.
+    if (fromApi.isNotEmpty) {
+      return fromApi.where((e) => '${e['kind']}' != 'social').toList();
+    }
+    return const [];
+  }
+
+  List<Map<String, dynamic>> get _socialLinks {
+    final fromApi = _parseLinkList(_entry?['social_links']);
+    if (fromApi.isNotEmpty) return fromApi;
+    // Back-compat fallback from combined external_links
+    final combined = _parseLinkList(_entry?['external_links']);
+    return combined.where((e) => '${e['kind']}' == 'social').toList();
   }
 
   IconData _platformIcon(String platform) {
@@ -132,6 +149,89 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
     }
   }
 
+  List<Widget> _buildLinkSection({
+    required String heading,
+    required List<Map<String, dynamic>> links,
+    required bool isDark,
+    required bool social,
+  }) {
+    if (links.isEmpty) return const [];
+    return [
+      const SizedBox(height: 22),
+      Text(heading, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+      const SizedBox(height: 10),
+      ...links.map((link) {
+        final url = '${link['url'] ?? ''}'.trim();
+        final platform = '${link['platform'] ?? 'website'}'.trim().toLowerCase();
+        final title = '${link['title'] ?? link['label'] ?? url}'.trim();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Material(
+            color: isDark ? AppColors.slate800 : AppColors.slate50,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: url.isEmpty ? null : () => _openUrl(url),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? AppColors.slate700 : const Color(0xFFE6EEEA),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.emerald.withValues(alpha: isDark ? 0.22 : 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        social ? _platformIcon(platform) : Icons.language_rounded,
+                        color: AppColors.emeraldDark,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title.isEmpty ? url : title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          ),
+                          Text(
+                            url,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? Colors.white54 : AppColors.slate500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.open_in_new_rounded,
+                      color: isDark ? Colors.white54 : AppColors.slate500,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
+    ];
+  }
+
   Future<void> _openUrl(String url) async {
     final uri = Uri.tryParse(url);
     if (uri == null) return;
@@ -154,7 +254,8 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
     final attachments = _attachments;
     final images = attachments.where((a) => '${a['file_type']}' == 'image').toList();
     final docs = attachments.where((a) => '${a['file_type']}' != 'image').toList();
-    final links = _externalLinks;
+    final externalLinks = _externalLinks;
+    final socialLinks = _socialLinks;
 
     return Scaffold(
       appBar: AppBar(title: Text(app.t(en: 'Profile', ur: 'پروفائل'))),
@@ -225,79 +326,18 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
                       const SizedBox(height: 8),
                       Text('${_entry!['awards']}'),
                     ],
-                    if (links.isNotEmpty) ...[
-                      const SizedBox(height: 22),
-                      Text(
-                        app.t(en: 'Social Links', ur: 'سوشل لنکس'),
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                      ),
-                      const SizedBox(height: 10),
-                      ...links.map((link) {
-                        final url = '${link['url'] ?? ''}'.trim();
-                        final platform = '${link['platform'] ?? 'other'}'.trim().toLowerCase();
-                        final title = '${link['title'] ?? link['label'] ?? url}'.trim();
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Material(
-                            color: isDark ? AppColors.slate800 : AppColors.slate50,
-                            borderRadius: BorderRadius.circular(12),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: url.isEmpty ? null : () => _openUrl(url),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isDark ? AppColors.slate700 : const Color(0xFFE6EEEA),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.emerald.withValues(alpha: isDark ? 0.22 : 0.12),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Icon(_platformIcon(platform), color: AppColors.emeraldDark, size: 20),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            title.isEmpty ? url : title,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                                          ),
-                                          Text(
-                                            url,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: isDark ? Colors.white54 : AppColors.slate500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.open_in_new_rounded,
-                                      color: isDark ? Colors.white54 : AppColors.slate500,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
+                    ..._buildLinkSection(
+                      heading: app.t(en: 'External Links', ur: 'بیرونی لنکس'),
+                      links: externalLinks,
+                      isDark: isDark,
+                      social: false,
+                    ),
+                    ..._buildLinkSection(
+                      heading: app.t(en: 'Social Links', ur: 'سوشل لنکس'),
+                      links: socialLinks,
+                      isDark: isDark,
+                      social: true,
+                    ),
                     if (attachments.isNotEmpty) ...[
                       const SizedBox(height: 22),
                       Text(

@@ -405,28 +405,44 @@ class WallController extends BaseController
         } catch (\Throwable $e) {
             return;
         }
-        $data['external_links'] = $this->encodeExternalLinks(
-            $this->request->getPost('link_platform'),
-            $this->request->getPost('link_url'),
-            $this->request->getPost('link_title')
+        $data['external_links'] = $this->encodeAllLinks();
+    }
+
+    private function encodeAllLinks(): ?string
+    {
+        $links = array_merge(
+            $this->encodeLinkGroup(
+                'external',
+                null,
+                $this->request->getPost('ext_link_url'),
+                $this->request->getPost('ext_link_title')
+            ),
+            $this->encodeLinkGroup(
+                'social',
+                $this->request->getPost('social_link_platform'),
+                $this->request->getPost('social_link_url'),
+                $this->request->getPost('social_link_title')
+            )
         );
+
+        return $links === [] ? null : json_encode($links, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     /**
      * @param mixed $platforms
      * @param mixed $urls
      * @param mixed $titles
+     * @return list<array{kind:string,platform:string,url:string,title:string}>
      */
-    private function encodeExternalLinks($platforms, $urls, $titles): ?string
+    private function encodeLinkGroup(string $kind, $platforms, $urls, $titles): array
     {
         $platforms = is_array($platforms) ? array_values($platforms) : [];
         $urls      = is_array($urls) ? array_values($urls) : [];
         $titles    = is_array($titles) ? array_values($titles) : [];
         $catalog   = WallModel::socialPlatforms();
         $links     = [];
+        $count     = max(count($urls), count($platforms), count($titles));
 
-        // Prefer URL rows as the driver (platform/title may be shorter).
-        $count = max(count($urls), count($platforms), count($titles));
         for ($i = 0; $i < $count; $i++) {
             $url = trim((string) ($urls[$i] ?? ''));
             $url = preg_replace('/\s+/', '', $url) ?? $url;
@@ -440,29 +456,47 @@ class WallController extends BaseController
                 continue;
             }
 
-            $rawPlatform = trim((string) ($platforms[$i] ?? ''));
-            $platform    = $rawPlatform === ''
-                ? WallModel::inferPlatformFromUrl($url)
-                : WallModel::normalizePlatform($rawPlatform);
-
-            $meta  = $catalog[$platform] ?? $catalog['other'];
             $title = trim((string) ($titles[$i] ?? ''));
-            if ($title === '') {
-                $title = $meta['label'];
+
+            if ($kind === 'social') {
+                $rawPlatform = trim((string) ($platforms[$i] ?? ''));
+                $platform    = $rawPlatform === ''
+                    ? WallModel::inferPlatformFromUrl($url)
+                    : WallModel::normalizePlatform($rawPlatform);
+                if (! WallModel::isSocialPlatform($platform)) {
+                    // Skip invalid social rows (keep them from polluting social section).
+                    continue;
+                }
+                $meta = $catalog[$platform];
+                if ($title === '') {
+                    $title = $meta['label'];
+                }
+                $links[] = [
+                    'kind'     => 'social',
+                    'platform' => $platform,
+                    'url'      => $url,
+                    'title'    => $title,
+                ];
+                continue;
             }
 
+            if ($title === '') {
+                $host = (string) (parse_url($url, PHP_URL_HOST) ?? '');
+                $title = $host !== '' ? (preg_replace('/^www\./', '', $host) ?: $url) : $url;
+            }
             $links[] = [
-                'platform' => $platform,
+                'kind'     => 'external',
+                'platform' => 'website',
                 'url'      => $url,
                 'title'    => $title,
             ];
         }
 
-        return $links === [] ? null : json_encode($links, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        return $links;
     }
 
     /**
-     * @return list<array{url:string,title:string,platform?:string,icon?:string,label?:string}>
+     * @return list<array{url:string,title:string,platform?:string,icon?:string,label?:string,kind?:string}>
      */
     public static function decodeExternalLinks(?string $json): array
     {
