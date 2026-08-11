@@ -83,28 +83,9 @@ class WallController extends BaseApiController
      */
     private function mapExternalLinks($json): array
     {
-        if ($json === null || trim((string) $json) === '') {
-            return [];
-        }
-        $decoded = json_decode((string) $json, true);
-        if (! is_array($decoded)) {
-            return [];
-        }
-        $out = [];
-        foreach ($decoded as $row) {
-            if (! is_array($row)) {
-                continue;
-            }
-            $url = trim((string) ($row['url'] ?? ''));
-            if ($url === '') {
-                continue;
-            }
-            $out[] = [
-                'url'   => $url,
-                'title' => trim((string) ($row['title'] ?? $url)),
-            ];
-        }
-        return $out;
+        return \App\Models\WallModel::decodeExternalLinks(
+            $json === null ? null : (string) $json
+        );
     }
 
     private function mapEntry(array $e, bool $detail = false): array

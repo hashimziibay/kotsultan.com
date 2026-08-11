@@ -143,13 +143,9 @@
                 </div>
 
                 <?php
-                    $externalLinks = [];
-                    if (!empty($person['external_links'])) {
-                        $decoded = json_decode((string) $person['external_links'], true);
-                        if (is_array($decoded)) {
-                            $externalLinks = $decoded;
-                        }
-                    }
+                    $externalLinks = \App\Models\WallModel::decodeExternalLinks(
+                        isset($person['external_links']) ? (string) $person['external_links'] : null
+                    );
                     if ($externalLinks === []) {
                         $externalLinks = [['title' => '', 'url' => '']];
                     }
@@ -160,8 +156,9 @@
                         <input type="text" name="link_title[]" value="<?= esc($link['title'] ?? '') ?>"
                                placeholder="<?= esc(lang('App.admin_link_title_placeholder')) ?>"
                                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
-                        <input type="url" name="link_url[]" value="<?= esc($link['url'] ?? '') ?>"
+                        <input type="text" name="link_url[]" value="<?= esc($link['url'] ?? '') ?>"
                                placeholder="https://example.com"
+                               inputmode="url" autocomplete="url"
                                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
                         <button type="button" class="remove-link-row px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold border border-transparent hover:border-rose-200">
                             <?= lang('App.admin_remove') ?>
@@ -281,7 +278,8 @@
       row.innerHTML = `
         <input type="text" name="link_title[]" value="" placeholder="${titlePlaceholder.replace(/"/g, '&quot;')}"
                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
-        <input type="url" name="link_url[]" value="" placeholder="https://example.com"
+        <input type="text" name="link_url[]" value="" placeholder="https://example.com"
+               inputmode="url" autocomplete="url"
                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
         <button type="button" class="remove-link-row px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold border border-transparent hover:border-rose-200">${removeLabel}</button>
       `;

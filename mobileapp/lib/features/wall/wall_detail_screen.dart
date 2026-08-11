@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -56,8 +58,37 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
 
   List<Map<String, dynamic>> get _externalLinks {
     final raw = _entry?['external_links'];
-    if (raw is! List) return const [];
-    return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    List<dynamic> list = const [];
+
+    if (raw is List) {
+      list = raw;
+    } else if (raw is String && raw.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) list = decoded;
+      } catch (_) {
+        list = const [];
+      }
+    } else {
+      return const [];
+    }
+
+    final out = <Map<String, dynamic>>[];
+    for (final item in list) {
+      if (item is String) {
+        final url = item.trim();
+        if (url.isEmpty) continue;
+        out.add({'url': url, 'title': url});
+        continue;
+      }
+      if (item is! Map) continue;
+      final m = Map<String, dynamic>.from(item);
+      final url = '${m['url'] ?? m['link'] ?? ''}'.trim();
+      if (url.isEmpty) continue;
+      final title = '${m['title'] ?? m['name'] ?? url}'.trim();
+      out.add({'url': url, 'title': title.isEmpty ? url : title});
+    }
+    return out;
   }
 
   Future<void> _openUrl(String url) async {

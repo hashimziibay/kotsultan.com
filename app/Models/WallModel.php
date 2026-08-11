@@ -236,4 +236,42 @@ class WallModel extends Model
 
         return $row;
     }
+
+    /**
+     * @return list<array{url:string,title:string}>
+     */
+    public static function decodeExternalLinks(?string $json): array
+    {
+        if ($json === null || trim($json) === '') {
+            return [];
+        }
+        $decoded = json_decode($json, true);
+        if (! is_array($decoded)) {
+            return [];
+        }
+        $out = [];
+        foreach ($decoded as $row) {
+            if (is_string($row)) {
+                $url = trim($row);
+                if ($url === '') {
+                    continue;
+                }
+                $out[] = ['url' => $url, 'title' => $url];
+                continue;
+            }
+            if (! is_array($row)) {
+                continue;
+            }
+            $url = trim((string) ($row['url'] ?? $row['link'] ?? ''));
+            if ($url === '') {
+                continue;
+            }
+            $title = trim((string) ($row['title'] ?? $row['name'] ?? $url));
+            $out[] = [
+                'url'   => $url,
+                'title' => $title !== '' ? $title : $url,
+            ];
+        }
+        return $out;
+    }
 }

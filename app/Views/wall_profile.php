@@ -128,25 +128,9 @@
         <?php endif; ?>
 
         <?php
-            $externalLinks = [];
-            if (!empty($item['external_links'])) {
-                $decoded = json_decode((string) $item['external_links'], true);
-                if (is_array($decoded)) {
-                    foreach ($decoded as $row) {
-                        if (! is_array($row)) {
-                            continue;
-                        }
-                        $url = trim((string) ($row['url'] ?? ''));
-                        if ($url === '') {
-                            continue;
-                        }
-                        $externalLinks[] = [
-                            'url'   => $url,
-                            'title' => trim((string) ($row['title'] ?? $url)),
-                        ];
-                    }
-                }
-            }
+            $externalLinks = \App\Models\WallModel::decodeExternalLinks(
+                isset($item['external_links']) ? (string) $item['external_links'] : null
+            );
         ?>
         <?php if (!empty($externalLinks)): ?>
         <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8 shadow-xs">
@@ -154,20 +138,22 @@
                 <i data-lucide="link-2" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></i>
                 <span><?= lang('App.external_links') ?></span>
             </h2>
-            <div class="space-y-2">
+            <ul class="space-y-2 list-none m-0 p-0">
                 <?php foreach ($externalLinks as $link): ?>
-                    <a href="<?= esc($link['url']) ?>" target="_blank" rel="noopener"
-                       class="flex items-center gap-3 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
-                        <span class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center">
-                            <i data-lucide="external-link" class="w-4 h-4"></i>
-                        </span>
-                        <span class="min-w-0 flex-1">
-                            <span class="block text-sm font-bold text-slate-900 dark:text-white truncate"><?= esc($link['title']) ?></span>
-                            <span class="block text-[11px] text-slate-500 truncate"><?= esc($link['url']) ?></span>
-                        </span>
-                    </a>
+                    <li>
+                        <a href="<?= esc($link['url']) ?>" target="_blank" rel="noopener"
+                           class="flex items-center gap-3 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
+                            <span class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block text-sm font-bold text-slate-900 dark:text-white break-words"><?= esc($link['title']) ?></span>
+                                <span class="block text-[11px] text-slate-500 break-all"><?= esc($link['url']) ?></span>
+                            </span>
+                        </a>
+                    </li>
                 <?php endforeach; ?>
-            </div>
+            </ul>
         </div>
         <?php endif; ?>
 

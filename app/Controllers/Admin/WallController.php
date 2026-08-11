@@ -417,19 +417,21 @@ class WallController extends BaseController
      */
     private function encodeExternalLinks($urls, $titles): ?string
     {
-        $urls   = is_array($urls) ? $urls : [];
-        $titles = is_array($titles) ? $titles : [];
+        $urls   = is_array($urls) ? array_values($urls) : [];
+        $titles = is_array($titles) ? array_values($titles) : [];
         $links  = [];
 
         foreach ($urls as $i => $rawUrl) {
             $url = trim((string) $rawUrl);
+            $url = preg_replace('/\s+/', '', $url) ?? $url;
             if ($url === '') {
                 continue;
             }
             if (! preg_match('#^https?://#i', $url)) {
-                $url = 'https://' . $url;
+                $url = 'https://' . ltrim($url, '/');
             }
-            if (! filter_var($url, FILTER_VALIDATE_URL)) {
+            // Keep social / query / unicode URLs that FILTER_VALIDATE_URL often rejects.
+            if (! preg_match('#^https?://[^\s<>"\']{3,}$#iu', $url)) {
                 continue;
             }
             $title = trim((string) ($titles[$i] ?? ''));
@@ -447,28 +449,7 @@ class WallController extends BaseController
      */
     public static function decodeExternalLinks(?string $json): array
     {
-        if ($json === null || trim($json) === '') {
-            return [];
-        }
-        $decoded = json_decode($json, true);
-        if (! is_array($decoded)) {
-            return [];
-        }
-        $out = [];
-        foreach ($decoded as $row) {
-            if (! is_array($row)) {
-                continue;
-            }
-            $url = trim((string) ($row['url'] ?? ''));
-            if ($url === '') {
-                continue;
-            }
-            $out[] = [
-                'url'   => $url,
-                'title' => trim((string) ($row['title'] ?? $url)),
-            ];
-        }
-        return $out;
+        return \App\Models\WallModel::decodeExternalLinks($json);
     }
 
     private function deleteAttachmentFile(array $attachment): void
