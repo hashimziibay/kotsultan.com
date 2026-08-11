@@ -7,10 +7,11 @@ DirectoryIndex index.php index.html
     RewriteEngine On
 
     # Public URLs must never show /public/ — redirect old bookmarks/crawlers.
-    RewriteCond %{THE_REQUEST} \s/+public/([^\s?]*) [NC]
-    RewriteRule ^public/(.*)$ /$1 [R=301,L]
+    # Matches both /public and /public/... (with or without query string).
+    RewriteCond %{THE_REQUEST} \s/+public[/?\s] [NC]
+    RewriteRule ^public/?(.*)$ /$1 [R=301,L,QSA]
 
-    # If request is already inside /public, do nothing special.
+    # If request is already inside /public after an internal rewrite, stop.
     RewriteRule ^public/ - [L]
 
     # Send everything else into public/

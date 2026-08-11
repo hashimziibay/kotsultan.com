@@ -7,29 +7,31 @@
 ?>
 
 <!-- 1. HERO SECTION WITH SEARCH -->
-<section class="relative bg-gradient-to-b from-emerald-50/50 to-slate-50 dark:from-slate-900 dark:to-slate-900 py-12 md:py-20 border-b border-slate-200/80 dark:border-slate-800 transition-colors duration-200 overflow-hidden">
+<section class="relative bg-gradient-to-b from-emerald-50/50 to-slate-50 dark:from-slate-900 dark:to-slate-900 py-8 md:py-14 border-b border-slate-200/80 dark:border-slate-800 transition-colors duration-200 overflow-hidden home-hero">
     
     <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center">
         
         <!-- Headline -->
-        <h1 class="blur-reveal text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
+        <h1 class="blur-reveal text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight mb-3 home-hero-title">
             <?= lang('App.hero_title') ?>
         </h1>
         
         <!-- Subtitle Container (Fixed Urdu Tagline + Subtitle) -->
-        <div class="blur-reveal max-w-2xl mx-auto mb-8 space-y-2">
-            <!-- Line 1: Tagline (follows the active locale; rendered in Jameel Noori Nastaleeq for Urdu) -->
-            <p class="font-semibold text-2xl sm:text-3xl text-emerald-600 dark:text-emerald-400 text-center leading-relaxed py-1 <?= $isUrdu ? 'font-urdu' : '' ?>" dir="<?= $isUrdu ? 'rtl' : 'ltr' ?>">
-                <?= lang('App.hero_tagline') ?>
+        <div class="blur-reveal max-w-2xl mx-auto mb-5 md:mb-6 space-y-2 hero-copy">
+            <!-- Always show this signature line in Urdu (both EN + UR site modes) -->
+            <p class="hero-signature font-semibold text-xl sm:text-2xl text-emerald-600 dark:text-emerald-400 text-center leading-snug"
+               dir="rtl"
+               lang="ur">
+                کوٹ سلطان، دلوں میں بستا ایک چھوٹا سا جہان
             </p>
             <!-- Line 2: Subtitle -->
-            <p class="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+            <p class="hero-subtitle text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
                 <?= lang('App.hero_subtitle') ?>
             </p>
         </div>
 
         <!-- Large Search Box with Alpine.js BorderGlow & Micro-interactions -->
-        <form action="<?= base_url('directory') ?>" method="GET" class="relative max-w-3xl mx-auto mb-8 z-20">
+        <form action="<?= base_url('directory') ?>" method="GET" class="relative max-w-3xl mx-auto mb-5 z-20">
             <div x-data="{ isFocused: false, isHovered: false }"
                  @mouseenter="isHovered = true"
                  @mouseleave="isHovered = false"
@@ -75,10 +77,10 @@
 
 
 <!-- 2. POPULAR CATEGORIES -->
-<section class="py-12 md:py-16 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 transition-colors duration-200">
+<section class="py-8 md:py-12 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 transition-colors duration-200 home-section">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div class="flex flex-col items-center text-center mb-10 gap-2">
+        <div class="flex flex-col items-center text-center mb-6 md:mb-8 gap-1.5">
             <h2 class="blur-reveal text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
                 <?= lang('App.popular_categories') ?>
             </h2>
@@ -105,10 +107,10 @@
 
 
 <!-- 3. RECENTLY ADDED BUSINESSES -->
-<section class="py-12 md:py-16 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200/80 dark:border-slate-800 transition-colors duration-200">
+<section class="py-8 md:py-12 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200/80 dark:border-slate-800 transition-colors duration-200 home-section">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div class="flex flex-col items-center text-center mb-10 gap-2">
+        <div class="flex flex-col items-center text-center mb-6 md:mb-8 gap-1.5">
             <h2 class="blur-reveal text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
                 <?= lang('App.recently_added') ?>
             </h2>

@@ -67,8 +67,126 @@
     background-color: #F59E0B;
     transition: opacity 200ms ease, transform 200ms ease;
 }
-[dir="rtl"] .nav-link-active::after {
-    transform: translateX(50%); /* reverse transform for RTL */
+/* Navbar controls — keep theme + language buttons aligned in LTR and RTL */
+.nav-controls {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    height: 36px !important;
+    flex-shrink: 0 !important;
+}
+nav button.nav-control-btn.btn {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+    flex-direction: row !important;
+    overflow: hidden !important;
+}
+nav button.nav-theme-btn.btn {
+    width: 36px !important;
+    min-width: 36px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+nav button.nav-lang-btn.btn {
+    padding-inline: 10px !important;
+}
+nav .nav-lang-label,
+nav button.nav-control-btn span {
+    font-size: 13px !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    padding-block: 0 !important;
+}
+nav button.nav-control-btn svg,
+nav button.nav-control-btn [data-lucide] {
+    width: 14px !important;
+    height: 14px !important;
+    flex-shrink: 0 !important;
+}
+html[lang="ur"] nav a {
+    font-size: 0.95rem !important;
+    line-height: 1.35 !important;
+}
+.nav-bar-row {
+    height: 64px !important;
+    max-height: 64px !important;
+    min-height: 64px !important;
+}
+html[lang="ur"] .nav-bar-row {
+    height: 64px !important;
+    max-height: 64px !important;
+    min-height: 64px !important;
+}
+html[lang="ur"] .nav-bar-row a.rounded-lg,
+html[lang="ur"] .nav-bar-row [class*="rounded-lg"] {
+    padding-block: 0.35rem !important;
+}
+
+/* Language dropdown — compact in both EN and UR */
+.nav-lang-menu {
+    width: 8rem !important;
+    min-width: 8rem !important;
+    max-width: 8rem !important;
+    padding-block: 0.25rem !important;
+}
+html[lang="ur"] .nav-lang-menu,
+html[lang="ur"] .nav-lang-menu[class*="rounded-xl"] {
+    padding-block: 0.25rem !important;
+}
+.nav-lang-menu a.nav-lang-option {
+    min-height: 36px !important;
+    height: 36px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-inline: 0.75rem !important;
+    display: flex !important;
+    align-items: center !important;
+    line-height: 1 !important;
+}
+html[lang="ur"] .nav-lang-menu a.nav-lang-option,
+html[lang="ur"] .nav-lang-menu a.nav-lang-option span,
+html[lang="ur"] .nav-lang-menu .nav-lang-option-label {
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    padding-block: 0 !important;
+    min-height: 0 !important;
+}
+.nav-lang-option-label {
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+}
+/* English label: smaller Latin size so it matches Urdu visual weight */
+.nav-lang-menu a[lang="en"],
+.nav-lang-menu a[lang="en"] span,
+.nav-lang-menu a[lang="en"] .nav-lang-option-label,
+html[lang="ur"] .nav-lang-menu a[lang="en"],
+html[lang="ur"] .nav-lang-menu a[lang="en"] span,
+html[lang="ur"] .nav-lang-menu a[lang="en"] .nav-lang-option-label {
+    font-family: Inter, system-ui, sans-serif !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+}
+/* Urdu label keeps Nastaleeq at the comfortable size */
+.nav-lang-menu a[lang="ur"],
+.nav-lang-menu a[lang="ur"] span,
+.nav-lang-menu a[lang="ur"] .nav-lang-option-label,
+html[lang="ur"] .nav-lang-menu a[lang="ur"],
+html[lang="ur"] .nav-lang-menu a[lang="ur"] span,
+html[lang="ur"] .nav-lang-menu a[lang="ur"] .nav-lang-option-label {
+    font-size: 13px !important;
+    line-height: 1.25 !important;
 }
 </style>
 <nav class="fixed top-0 inset-x-0 z-50 bg-white/95 dark:bg-slate-900/95 border-b border-slate-200/80 dark:border-slate-800 shadow-xs transition-all duration-200"
@@ -96,14 +214,14 @@
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
-        <div class="flex justify-between items-center h-16">
+        <div class="flex justify-between items-center gap-3 nav-bar-row" style="height:64px;max-height:64px;">
             
             <!-- Logo -->
-            <a href="<?= base_url('/') ?>" class="flex items-center gap-2.5 group">
-                <div class="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-sm group-hover:bg-emerald-700 transition-colors">
+            <a href="<?= base_url('/') ?>" class="flex items-center gap-2.5 group shrink-0 min-w-0">
+                <div class="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-sm group-hover:bg-emerald-700 transition-colors shrink-0">
                     <i data-lucide="map-pin" class="w-5 h-5"></i>
                 </div>
-                <div class="flex flex-col text-start">
+                <div class="flex flex-col text-start min-w-0">
                     <span class="brand-name font-bold text-lg leading-none tracking-tight text-slate-900 dark:text-white">
                         <?= lang('App.brand_name') ?>
                     </span>
@@ -114,34 +232,33 @@
             </a>
 
             <!-- Desktop Nav Links with Automatic Active Indicator -->
-            <div class="hidden md:flex items-center gap-1 lg:gap-2">
+            <div class="hidden md:flex items-center justify-center flex-1 gap-0.5 lg:gap-1 min-w-0">
                 <?php foreach ($navLinks as $link): ?>
                     <?php 
                         $isActive = $isLinkActive($link['url']);
                         $linkTitle = $isUrdu ? $link['title_ur'] : $link['title_en'];
                         $href = base_url($link['url'] === '/' ? '' : ltrim($link['url'], '/'));
                     ?>
-                    <a href="<?= $href ?>" class="relative px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 <?= $isActive ? 'nav-link-active text-orange-500 dark:text-orange-400 font-bold' : 'text-slate-700 dark:text-slate-200 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
+                    <a href="<?= $href ?>" class="relative px-2.5 lg:px-3.5 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 <?= $isActive ? 'nav-link-active text-orange-500 dark:text-orange-400 font-bold' : 'text-slate-700 dark:text-slate-200 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
                         <span><?= esc($linkTitle) ?></span>
                     </a>
                 <?php endforeach; ?>
             </div>
 
             <!-- Controls: Language Switcher & Dark Mode Toggle -->
-            <!-- Natural HTML order left-to-right (LTR) will automatically flip in RTL thanks to flex -->
-            <div class="flex items-center gap-1.5 h-[38px]">
+            <div class="nav-controls flex items-center justify-center gap-1.5 shrink-0 h-9">
                 
                 <!-- Magic UI Style Animated Theme Toggler -->
                 <button @click="toggleTheme($event)" 
                         type="button"
                         class="nav-control-btn nav-theme-btn btn btn-sm btn-secondary relative overflow-hidden transition-all duration-300 transform active:scale-95" 
                         aria-label="Toggle Dark Mode">
-                    <span class="relative w-3.5 h-3.5 block">
-                        <span class="absolute inset-0 flex items-center justify-center transition-all duration-500 ease-out transform"
+                    <span class="relative w-3.5 h-3.5 block leading-none">
+                        <span class="absolute inset-0 flex items-center justify-center transition-all duration-500 ease-out transform leading-none"
                               :class="darkMode ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'">
                             <i data-lucide="sun" class="w-3.5 h-3.5 text-amber-400"></i>
                         </span>
-                        <span class="absolute inset-0 flex items-center justify-center transition-all duration-500 ease-out transform"
+                        <span class="absolute inset-0 flex items-center justify-center transition-all duration-500 ease-out transform leading-none"
                               :class="!darkMode ? 'rotate-0 scale-100 opacity-100' : 'rotate-90 scale-0 opacity-0'">
                             <i data-lucide="moon" class="w-3.5 h-3.5 text-slate-700 dark:text-slate-200"></i>
                         </span>
@@ -149,12 +266,11 @@
                 </button>
                 
                 <!-- Language Switcher Dropdown -->
-                <div class="relative h-[38px] flex items-center" x-data="{ open: false }">
-                    <!-- Added flex-row and rtl:flex-row-reverse for icon order within button -->
+                <div class="relative h-9 flex items-center" x-data="{ open: false }">
                     <button @click="open = !open" 
                             @click.outside="open = false"
                             type="button"
-                            class="nav-control-btn nav-lang-btn btn btn-sm btn-secondary flex-row rtl:flex-row-reverse">
+                            class="nav-control-btn nav-lang-btn btn btn-sm btn-secondary">
                         <i data-lucide="globe" class="w-3.5 h-3.5 text-emerald-600 shrink-0"></i>
                         <span class="nav-lang-label leading-none"><?= $isUrdu ? 'اردو' : 'EN' ?></span>
                         <i data-lucide="chevron-down" class="w-3 h-3 shrink-0"></i>
@@ -163,19 +279,19 @@
                     <!-- end-0 aligns right in LTR, left in RTL -->
                     <div x-show="open" 
                          x-transition
-                         class="nav-lang-menu absolute end-0 mt-2 w-36 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg py-1 z-50">
-                        <a href="<?= base_url('lang/en') ?>" class="nav-lang-option flex items-center gap-2 px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-start flex-row rtl:flex-row-reverse">
-                            <span><?= lang('App.english_en') ?></span>
+                         class="nav-lang-menu absolute end-0 top-full mt-2 w-32 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg py-1 z-50">
+                        <a href="<?= base_url('lang/en') ?>" class="nav-lang-option flex items-center gap-2 px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-start" lang="en">
+                            <span class="nav-lang-option-label">English</span>
                         </a>
-                        <a href="<?= base_url('lang/ur') ?>" class="nav-lang-option flex items-center gap-2 px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-start flex-row rtl:flex-row-reverse">
-                            <span><?= lang('App.urdu_ur') ?></span>
+                        <a href="<?= base_url('lang/ur') ?>" class="nav-lang-option flex items-center gap-2 px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-start" lang="ur">
+                            <span class="nav-lang-option-label">اردو</span>
                         </a>
                     </div>
                 </div>
 
                 <!-- Mobile Menu Button -->
                 <button @click="mobileMenuOpen = !mobileMenuOpen" 
-                        class="md:hidden btn btn-sm btn-ghost p-2">
+                        class="md:hidden btn btn-sm btn-ghost p-2 h-9 w-9 inline-flex items-center justify-center">
                     <i data-lucide="menu" class="w-5 h-5" x-show="!mobileMenuOpen"></i>
                     <i data-lucide="x" class="w-5 h-5" x-show="mobileMenuOpen"></i>
                 </button>

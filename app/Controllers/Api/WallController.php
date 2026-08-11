@@ -65,16 +65,18 @@ class WallController extends BaseApiController
         $photo = $this->absoluteUrl($e['photo'] ?? '') ?: ($e['photo_url'] ?? null);
 
         $base = [
-            'id'          => (int) ($e['id'] ?? 0),
-            'slug'        => $e['slug'] ?? null,
-            'name'        => $e['display_name'] ?? ($e['name'] ?? ($e['name_en'] ?? '')),
-            'name_en'     => $e['name_en'] ?? '',
-            'name_ur'     => $e['name_ur'] ?? '',
-            'profession'  => $e['display_profession'] ?? ($e['profession'] ?? ($e['profession_en'] ?? '')),
-            'category'    => $e['display_category_name'] ?? ($e['category_name'] ?? ''),
-            'photo'       => $photo,
-            'featured'    => (bool) ($e['featured'] ?? false),
-            'views'       => (int) ($e['views'] ?? 0),
+            'id'            => (int) ($e['id'] ?? 0),
+            'slug'          => $e['slug'] ?? null,
+            'name'          => $e['display_name'] ?? ($e['name'] ?? ($e['name_en'] ?? '')),
+            'name_en'       => $e['name_en'] ?? '',
+            'name_ur'       => $e['name_ur'] ?? '',
+            'profession'    => $e['display_profession'] ?? ($e['profession'] ?? ($e['profession_en'] ?? '')),
+            'category'      => $e['display_category'] ?? ($e['category_name_en'] ?? ($e['category_name'] ?? '')),
+            'category_id'   => isset($e['category_id']) ? (int) $e['category_id'] : null,
+            'category_slug' => $e['category_slug'] ?? null,
+            'photo'         => $photo,
+            'featured'      => (bool) ($e['featured'] ?? false),
+            'views'         => (int) ($e['views'] ?? 0),
         ];
 
         if (!$detail) {
@@ -88,7 +90,6 @@ class WallController extends BaseApiController
             'years_of_service' => $e['years_of_service'] ?? '',
             'birth_date'       => $e['birth_date'] ?? '',
             'death_date'       => $e['death_date'] ?? '',
-            'category_id'      => $e['category_id'] ?? null,
         ];
     }
 }

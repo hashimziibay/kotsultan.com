@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/offline_banner.dart';
 import '../shared/business_card_tile.dart';
 import 'business_detail_screen.dart';
 
@@ -26,6 +27,7 @@ class _CategoryListingScreenState extends State<CategoryListingScreen> {
   final _searchCtrl = TextEditingController();
   Timer? _debounce;
   bool _loading = true;
+  bool _fromCache = false;
   String? _error;
   List<dynamic> _items = [];
   int _page = 1;
@@ -61,19 +63,19 @@ class _CategoryListingScreenState extends State<CategoryListingScreen> {
       _error = null;
     });
     try {
-      final query = <String, String>{
-        'page': '$_page',
-        'per_page': '20',
-        'category': widget.categoryId,
-        if (_searchCtrl.text.trim().isNotEmpty) 'q': _searchCtrl.text.trim(),
-      };
-      final res = await context.read<AppState>().api.get('businesses', query: query);
-      final data = res['data'] as Map<String, dynamic>;
+      final res = await context.read<AppState>().catalog.getBusinesses(
+        q: _searchCtrl.text.trim().isEmpty ? null : _searchCtrl.text.trim(),
+        category: widget.categoryId,
+        page: _page,
+        perPage: 20,
+      );
+      final data = res.data;
       setState(() {
         final next = (data['items'] as List?) ?? [];
         _items = reset ? next : [..._items, ...next];
         final pages = data['total_pages'];
         _totalPages = pages is int ? pages : int.tryParse('$pages') ?? 1;
+        _fromCache = res.fromCache;
       });
     } catch (e) {
       setState(() => _error = e.toString());
@@ -91,6 +93,7 @@ class _CategoryListingScreenState extends State<CategoryListingScreen> {
       ),
       body: Column(
         children: [
+          OfflineBanner(visible: _fromCache),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: TextField(

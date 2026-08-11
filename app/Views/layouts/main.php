@@ -34,7 +34,8 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     
     <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="<?= base_url('css/app.css') ?>">
+    <?php $appCssPath = FCPATH . 'css' . DIRECTORY_SEPARATOR . 'app.css'; ?>
+    <link rel="stylesheet" href="<?= base_url('css/app.css') ?>?v=<?= is_file($appCssPath) ? filemtime($appCssPath) : time() ?>">
     
     <!-- Alpine.js Plugins & Core -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.13.5/dist/cdn.min.js"></script>

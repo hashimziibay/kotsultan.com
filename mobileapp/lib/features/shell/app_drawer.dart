@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../more/about_screen.dart';
 import '../more/more_screen.dart';
 import '../profile/profile_screen.dart';
 
@@ -47,15 +48,16 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _push(BuildContext context, Widget page) {
-    Navigator.of(context).pop();
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+    // Keep NavigatorState before closing the drawer — drawer context may unmount after pop.
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    navigator.push(MaterialPageRoute(builder: (_) => page));
   }
 
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     final user = app.user;
-    final isRtl = app.isRtl;
 
     return Drawer(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -179,21 +181,6 @@ class AppDrawer extends StatelessWidget {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: ListTile(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                leading: Icon(isRtl ? Icons.logout : Icons.logout_rounded, color: AppColors.rose),
-                title: Text(
-                  app.t(en: 'Logout', ur: 'لاگ آؤٹ'),
-                  style: const TextStyle(color: AppColors.rose, fontWeight: FontWeight.w700),
-                ),
-                onTap: () async {
-                  Navigator.of(context).pop();
-                  await app.logout();
-                },
-              ),
-            ),
           ],
         ),
       ),
@@ -207,6 +194,7 @@ class _DrawerLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
       child: Text(
@@ -214,7 +202,7 @@ class _DrawerLabel extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
-          color: Colors.grey.shade600,
+          color: isDark ? Colors.white60 : Colors.grey.shade600,
           letterSpacing: 0.3,
         ),
       ),
@@ -237,18 +225,23 @@ class _DrawerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final selectedColor = isDark ? AppColors.emeraldLight : AppColors.emeraldDark;
+    final idleIcon = isDark ? Colors.white70 : AppColors.slate700;
+    final idleText = isDark ? Colors.white : AppColors.slate900;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       child: ListTile(
         selected: selected,
-        selectedTileColor: AppColors.tealSoft,
+        selectedTileColor: isDark ? AppColors.emerald.withValues(alpha: 0.22) : AppColors.tealSoft,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        leading: Icon(icon, color: selected ? AppColors.emeraldDark : AppColors.slate700),
+        leading: Icon(icon, color: selected ? selectedColor : idleIcon),
         title: Text(
           label,
           style: TextStyle(
             fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-            color: selected ? AppColors.emeraldDark : AppColors.slate900,
+            color: selected ? selectedColor : idleText,
           ),
         ),
         onTap: onTap,
@@ -265,10 +258,12 @@ class DrawerMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fallback = Theme.of(context).appBarTheme.foregroundColor ??
+        Theme.of(context).colorScheme.onSurface;
     return IconButton(
       tooltip: 'Menu',
       onPressed: () => ShellScope.maybeOf(context)?.openDrawer(),
-      icon: Icon(Icons.menu_rounded, color: color ?? AppColors.slate900),
+      icon: Icon(Icons.menu_rounded, color: color ?? fallback),
     );
   }
 }

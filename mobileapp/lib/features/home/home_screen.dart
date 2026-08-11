@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/offline_banner.dart';
 import '../directory/business_detail_screen.dart';
 import '../directory/category_listing_screen.dart';
 import '../shared/business_card_tile.dart';
@@ -18,19 +19,38 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _searchCtrl = TextEditingController();
   bool _loading = true;
+  bool _fromCache = false;
   String? _error;
   Map<String, dynamic>? _data;
+  int _seenEpoch = -1;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final app = context.read<AppState>();
+      app.addListener(_onAppChanged);
+      _seenEpoch = app.catalogEpoch;
+      _load();
+    });
   }
 
   @override
   void dispose() {
+    try {
+      context.read<AppState>().removeListener(_onAppChanged);
+    } catch (_) {}
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _onAppChanged() {
+    if (!mounted) return;
+    final epoch = context.read<AppState>().catalogEpoch;
+    if (epoch != _seenEpoch) {
+      _seenEpoch = epoch;
+      _load();
+    }
   }
 
   Future<void> _load() async {
@@ -39,8 +59,15 @@ class _HomeScreenState extends State<HomeScreen> {
       _error = null;
     });
     try {
-      final res = await context.read<AppState>().api.get('home');
-      setState(() => _data = res['data'] as Map<String, dynamic>);
+      final app = context.read<AppState>();
+      // ignore: unawaited_futures
+      app.syncPendingUser();
+      final res = await app.catalog.getHome();
+      setState(() {
+        _data = res.data;
+        _fromCache = res.fromCache;
+      });
+      app.setOfflineBanner(res.fromCache);
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -77,6 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 : CustomScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
+                      SliverToBoxAdapter(child: OfflineBanner(visible: _fromCache)),
                       SliverToBoxAdapter(
                         child: _HomeHeader(
                           app: app,
@@ -259,7 +287,7 @@ class _HomeHeader extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 28),
               Text(
                 app.t(
                   en: 'Find shops, services & people in Kot Sultan',

@@ -53,7 +53,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(app.t(en: 'Profile updated', ur: 'پروفائل اپ ڈیٹ ہو گیا'))),
+          SnackBar(
+            content: Text(
+              app.pendingUserSync
+                  ? app.t(
+                      en: 'Saved on this device — will sync when online',
+                      ur: 'اس ڈیوائس پر محفوظ — آن لائن ہونے پر سنک ہو گا',
+                    )
+                  : app.t(en: 'Profile updated', ur: 'پروفائل اپ ڈیٹ ہو گیا'),
+            ),
+          ),
         );
       }
     } catch (_) {
@@ -73,14 +82,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(app.t(en: 'Profile', ur: 'پروفائل')),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await app.logout();
-            },
-            child: Text(app.t(en: 'Logout', ur: 'لاگ آؤٹ')),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

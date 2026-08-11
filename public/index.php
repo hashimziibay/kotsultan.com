@@ -51,6 +51,19 @@ if ($hostHeader !== '' && preg_match('/(^|\.)kotsultan\.com$/', $hostHeader)) {
     putenv('app.baseURL=' . $forcedBase);
     $_ENV['app.baseURL']    = $forcedBase;
     $_SERVER['app.baseURL'] = $forcedBase;
+
+    // If someone opens /public/... on production, permanently redirect to clean URLs.
+    $reqPath = (string) (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
+    if (preg_match('#^/public(/|$)#i', $reqPath)) {
+        $cleanPath = preg_replace('#^/public#i', '', $reqPath) ?: '/';
+        if ($cleanPath === '' || $cleanPath[0] !== '/') {
+            $cleanPath = '/' . ltrim($cleanPath, '/');
+        }
+        $qs = (string) ($_SERVER['QUERY_STRING'] ?? '');
+        $target = ($isHttps ? 'https://' : 'http://') . $hostHeader . $cleanPath . ($qs !== '' ? ('?' . $qs) : '');
+        header('Location: ' . $target, true, 301);
+        exit;
+    }
 }
 
 /*

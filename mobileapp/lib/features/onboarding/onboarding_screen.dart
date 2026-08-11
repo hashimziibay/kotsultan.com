@@ -38,6 +38,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         localeCode: _locale,
         theme: _theme,
       );
+      if (mounted && app.pendingUserSync) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _locale == 'ur'
+                  ? 'آف لائن محفوظ ہو گیا — آن لائن ہونے پر ایڈمن کو بھیج دیا جائے گا'
+                  : 'Saved offline — will sync to admin when you are online',
+            ),
+          ),
+        );
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -85,8 +96,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 6),
                   Text(
                     isUrdu
-                        ? 'شروع کرنے کے لیے اپنی تفصیلات درج کریں'
-                        : 'Enter your details to get started',
+                        ? 'ایک بار اپنی تفصیلات دیں اور ڈائریکٹری استعمال کریں'
+                        : 'Share your details once, then browse the directory',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey.shade600),
                   ),

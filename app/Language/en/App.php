@@ -53,7 +53,7 @@ return [
     
     // Hero & Search
     'hero_title' => 'Find Every Business in Kot Sultan',
-    'hero_tagline' => 'Kot Sultan, A Small World Residing in Hearts',
+    'hero_tagline' => 'کوٹ سلطان، دلوں میں بستا ایک چھوٹا سا جہان',
     'hero_subtitle' => 'Search local shops, schools, clinics, mosques, services, and craftspeople in Kot Sultan.',
     'search_placeholder' => 'Search by business name, category, owner, address, or phone...',
     'search_button' => 'Search Directory',
@@ -267,8 +267,8 @@ return [
     'directory_settings' => 'Directory Settings & Languages',
     'active_languages' => 'Active Languages',
     'active_languages_sub' => 'KotSultan.com supports English (EN) and Original Urdu (RTL).',
-    'english_en' => 'English (EN)',
-    'urdu_ur' => 'Urdu (UR)',
+    'english_en' => 'English',
+    'urdu_ur' => 'اردو',
     'business_name' => 'Business Name',
     'status' => 'Status',
     'actions' => 'Actions',

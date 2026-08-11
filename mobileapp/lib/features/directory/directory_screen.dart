@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/offline_banner.dart';
 import '../shared/business_card_tile.dart';
 import '../shell/app_drawer.dart';
 import 'business_detail_screen.dart';
@@ -20,19 +21,23 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
   final _searchCtrl = TextEditingController();
   Timer? _debounce;
   bool _loading = true;
+  bool _fromCache = false;
   String? _error;
   List<dynamic> _items = [];
   List<dynamic> _categories = [];
   String? _category;
   int _page = 1;
   int _totalPages = 1;
+  int _seenEpoch = -1;
 
   @override
   void initState() {
     super.initState();
     _searchCtrl.addListener(_onSearchChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      context.read<AppState>().addListener(_onAppStateChanged);
+      final app = context.read<AppState>();
+      app.addListener(_onAppStateChanged);
+      _seenEpoch = app.catalogEpoch;
       await _loadCategories();
       _consumePendingSearch();
       await _load();
@@ -52,6 +57,14 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
 
   void _onAppStateChanged() {
     if (!mounted) return;
+    final app = context.read<AppState>();
+    final epoch = app.catalogEpoch;
+    if (epoch != _seenEpoch) {
+      _seenEpoch = epoch;
+      _loadCategories();
+      _load();
+      return;
+    }
     if (_consumePendingSearch()) _load();
   }
 
@@ -73,8 +86,8 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
 
   Future<void> _loadCategories() async {
     try {
-      final res = await context.read<AppState>().api.get('categories');
-      setState(() => _categories = (res['data'] as List?) ?? []);
+      final res = await context.read<AppState>().catalog.getCategories();
+      setState(() => _categories = res.data);
     } catch (_) {}
   }
 
@@ -85,20 +98,22 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
       _error = null;
     });
     try {
-      final query = <String, String>{
-        'page': '$_page',
-        'per_page': '20',
-        if (_searchCtrl.text.trim().isNotEmpty) 'q': _searchCtrl.text.trim(),
-        if (_category != null && _category!.isNotEmpty) 'category': _category!,
-      };
-      final res = await context.read<AppState>().api.get('businesses', query: query);
-      final data = res['data'] as Map<String, dynamic>;
+      final app = context.read<AppState>();
+      final res = await app.catalog.getBusinesses(
+        q: _searchCtrl.text.trim().isEmpty ? null : _searchCtrl.text.trim(),
+        category: _category,
+        page: _page,
+        perPage: 20,
+      );
+      final data = res.data;
       setState(() {
         final next = (data['items'] as List?) ?? [];
         _items = reset ? next : [..._items, ...next];
         final pages = data['total_pages'];
         _totalPages = pages is int ? pages : int.tryParse('$pages') ?? 1;
+        _fromCache = res.fromCache;
       });
+      app.setOfflineBanner(res.fromCache);
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -116,6 +131,23 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
       ),
       body: Column(
         children: [
+          OfflineBanner(visible: _fromCache),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Text(
+              app.t(
+                en: 'Search by business name, phone, or pick a category below to browse local shops and services.',
+                ur: 'کاروبار کا نام یا فون سے تلاش کریں، یا نیچے سے زمرہ منتخب کر کے مقامی دکانیں اور خدمات دیکھیں۔',
+              ),
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.35,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white70
+                    : AppColors.slate500,
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: TextField(

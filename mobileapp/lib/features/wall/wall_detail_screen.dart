@@ -31,9 +31,15 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
       _error = null;
     });
     try {
-      final res = await context.read<AppState>().api.get('wall/${widget.idOrSlug}');
-      final data = res['data'] as Map<String, dynamic>;
-      setState(() => _entry = data['entry'] as Map<String, dynamic>?);
+      final res = await context.read<AppState>().catalog.getWallItem(widget.idOrSlug);
+      final data = res.data;
+      setState(() {
+        if (data['entry'] is Map) {
+          _entry = Map<String, dynamic>.from(data['entry'] as Map);
+        } else {
+          _entry = data;
+        }
+      });
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -80,6 +86,22 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: AppColors.emerald, fontWeight: FontWeight.w700),
                     ),
+                    if ('${_entry?['category'] ?? ''}'.trim().isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Center(
+                        child: Chip(
+                          backgroundColor: AppColors.tealSoft,
+                          side: BorderSide.none,
+                          label: Text(
+                            '${_entry!['category']}',
+                            style: const TextStyle(
+                              color: AppColors.emeraldDark,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     if ('${_entry?['intro'] ?? ''}'.isNotEmpty) ...[
                       const SizedBox(height: 20),
                       Text(app.t(en: 'Biography', ur: 'سوانح'), style: const TextStyle(fontWeight: FontWeight.w800)),

@@ -30,8 +30,8 @@ class App extends BaseConfig
             $isSecure = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
                 || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
                 || (isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443');
-            $scheme         = $isSecure ? 'https://' : 'http://';
-            $this->baseURL  = $scheme . $host . '/';
+            $scheme          = $isSecure ? 'https://' : 'http://';
+            $this->baseURL   = $scheme . $host . '/';
             $this->indexPage = '';
             return;
         }
@@ -90,6 +90,7 @@ class App extends BaseConfig
         $parts = parse_url($url);
         if (is_array($parts) && isset($parts['scheme'], $parts['host'])) {
             $path = $parts['path'] ?? '/';
+            // Strip any "/public" that appears as the only (or first) public web path.
             if (preg_match('#^/public(/|$)#i', $path)) {
                 $path = preg_replace('#^/public#i', '', $path) ?: '/';
                 if ($path === '' || $path[0] !== '/') {

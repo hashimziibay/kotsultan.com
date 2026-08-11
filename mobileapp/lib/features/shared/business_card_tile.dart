@@ -20,12 +20,15 @@ class BusinessCardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final image = '${item['image'] ?? ''}';
     final name = '${item['name'] ?? ''}';
     final category = '${item['category'] ?? ''}';
     final phone = '${item['phone'] ?? ''}'.trim();
     final owner = '${item['owner_name'] ?? ''}';
     final address = '${item['address'] ?? ''}';
+    final muted = isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600;
+    final mutedSoft = isDark ? const Color(0xFF64748B) : Colors.grey.shade500;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -52,13 +55,13 @@ class BusinessCardTile extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.tealSoft,
+                          color: isDark ? AppColors.emerald.withValues(alpha: 0.22) : AppColors.tealSoft,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           category,
-                          style: const TextStyle(
-                            color: AppColors.emeraldDark,
+                          style: TextStyle(
+                            color: isDark ? AppColors.emeraldLight : AppColors.emeraldDark,
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
@@ -72,34 +75,44 @@ class BusinessCardTile extends StatelessWidget {
                     ),
                     if (owner.isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      Text(owner, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                      Text(owner, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 12)),
                     ],
                     if (address.isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      Text(address, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                      Text(address, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: mutedSoft, fontSize: 12)),
                     ],
                     if (phone.isNotEmpty) ...[
                       const SizedBox(height: 8),
+                      // Keep phone row LTR so icon + number stay aligned in Urdu/RTL.
                       Row(
+                        textDirection: TextDirection.ltr,
                         children: [
                           const Icon(Icons.phone_rounded, size: 14, color: AppColors.emerald),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               phone,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                               textDirection: TextDirection.ltr,
+                              textAlign: TextAlign.left,
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Material(
-                            color: AppColors.tealSoft,
+                            color: isDark ? AppColors.emerald.withValues(alpha: 0.22) : AppColors.tealSoft,
                             borderRadius: BorderRadius.circular(10),
                             child: InkWell(
                               borderRadius: BorderRadius.circular(10),
                               onTap: () => launchUrl(Uri.parse('tel:$phone')),
-                              child: const Padding(
-                                padding: EdgeInsets.all(8),
-                                child: Icon(Icons.call_rounded, size: 16, color: AppColors.emeraldDark),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Icon(
+                                  Icons.call_rounded,
+                                  size: 16,
+                                  color: isDark ? AppColors.emeraldLight : AppColors.emeraldDark,
+                                ),
                               ),
                             ),
                           ),

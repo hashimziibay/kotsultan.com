@@ -3373,45 +3373,45 @@ html[lang="ur"] *:not(i):not(svg):not(path):not(script):not(style) {
 /* Headings — slightly more line height for tall Nastaleeq ligatures */
 
 html[lang="ur"] h1 {
-  font-size: 3rem;
-  line-height: 2.4;
+  font-size: 2.35rem;
+  line-height: 1.55;
   font-weight: 700;
-  padding-block: 0.2em;
+  padding-block: 0;
 }
 
 html[lang="ur"] h2 {
-  font-size: 2.25rem;
-  line-height: 2.3;
+  font-size: 1.75rem;
+  line-height: 1.5;
   font-weight: 700;
-  padding-block: 0.15em;
+  padding-block: 0;
 }
 
 html[lang="ur"] h3 {
-  font-size: 1.75rem;
-  line-height: 2.2;
+  font-size: 1.4rem;
+  line-height: 1.45;
   font-weight: 700;
-  padding-block: 0.1em;
+  padding-block: 0;
 }
 
 html[lang="ur"] h4 {
-  font-size: 1.4rem;
-  line-height: 2.1;
+  font-size: 1.2rem;
+  line-height: 1.45;
   font-weight: 600;
 }
 
 html[lang="ur"] h5 {
-  font-size: 1.25rem;
-  line-height: 2.0;
+  font-size: 1.1rem;
+  line-height: 1.4;
   font-weight: 600;
 }
 
 html[lang="ur"] h6 {
-  font-size: 1.125rem;
-  line-height: 2.0;
+  font-size: 1rem;
+  line-height: 1.4;
   font-weight: 600;
 }
 
-/* Paragraphs, spans, labels */
+/* Paragraphs, spans, labels — tighter to reduce empty space */
 
 html[lang="ur"] p,
   html[lang="ur"] span,
@@ -3420,18 +3420,64 @@ html[lang="ur"] p,
   html[lang="ur"] small,
   html[lang="ur"] td,
   html[lang="ur"] th {
-  line-height: 2.1;
-  font-size: 1.25rem;
+  line-height: 1.7;
+  font-size: 1.1rem;
 }
 
-/* Navigation links — full Nastaleeq (exclude compact header controls) */
+/* Home page — reduce Urdu vertical whitespace between sections */
+
+html[lang="ur"] .home-hero {
+  padding-top: 1.75rem !important;
+  padding-bottom: 1.75rem !important;
+}
+html[lang="ur"] .home-hero-title {
+  margin-bottom: 0.5rem !important;
+  line-height: 1.45 !important;
+  padding-block: 0 !important;
+}
+html[lang="ur"] .home-section {
+  padding-top: 1.75rem !important;
+  padding-bottom: 1.75rem !important;
+}
+html[lang="ur"] .hero-copy p,
+html[lang="ur"] .hero-subtitle {
+  line-height: 1.55 !important;
+  padding-block: 0 !important;
+}
+
+/* Signature line — always Urdu, focused/prominent */
+
+.hero-signature {
+  font-family: 'Jameel Noori Nastaleeq', serif !important;
+  font-size: 1.55rem !important;
+  line-height: 1.7 !important;
+  padding-block: 0.15em !important;
+  letter-spacing: 0;
+}
+@media (min-width: 640px) {
+  .hero-signature {
+    font-size: 1.85rem !important;
+  }
+}
+html[lang="ur"] .hero-signature {
+  font-size: 1.45rem !important;
+  line-height: 1.65 !important;
+}
+@media (min-width: 640px) {
+  html[lang="ur"] .hero-signature {
+    font-size: 1.7rem !important;
+  }
+}
+
+/* Navigation links — compact so Urdu fits the fixed header height */
 
 html[lang="ur"] nav a,
-  html[lang="ur"] nav span:not(.nav-lang-label),
+  html[lang="ur"] nav span:not(.nav-lang-label):not(.brand-name):not(.brand-tagline),
   html[lang="ur"] nav button:not(.nav-control-btn) {
-  font-size: 1.25rem;
-  line-height: 2.0;
+  font-size: 0.95rem !important;
+  line-height: 1.35 !important;
   letter-spacing: 0;
+  padding-block: 0 !important;
 }
 
 /* Buttons — taller to accommodate Nastaleeq descenders */
@@ -3447,23 +3493,30 @@ html[lang="ur"] .btn:not(.nav-control-btn) {
 /* Brand lockup — keep title dominant; tagline stays compact in Urdu */
 
 html[lang="ur"] .brand-name {
-  font-size: 1.35rem !important;
-  line-height: 1.6 !important;
+  font-size: 1.15rem !important;
+  line-height: 1.35 !important;
 }
 
 html[lang="ur"] .brand-tagline {
-  font-size: 0.72rem !important;
-  line-height: 1.5 !important;
+  font-size: 0.7rem !important;
+  line-height: 1.35 !important;
   padding-block: 0 !important;
 }
 
-/* Navbar language/theme controls — identical height */
+/* Navbar language/theme controls — identical height & vertical center */
+
+.nav-controls {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 36px !important;
+}
 
 nav button.nav-control-btn.btn,
 html[lang="ur"] nav button.nav-control-btn.btn {
-  height: 38px !important;
-  min-height: 38px !important;
-  max-height: 38px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   box-sizing: border-box !important;
@@ -3474,19 +3527,21 @@ html[lang="ur"] nav button.nav-control-btn.btn {
   font-size: 13px !important;
   line-height: 1 !important;
   overflow: hidden !important;
+  vertical-align: middle !important;
+  flex-direction: row !important;
 }
 
 nav button.nav-theme-btn.btn,
 html[lang="ur"] nav button.nav-theme-btn.btn {
-  width: 38px !important;
+  width: 36px !important;
+  min-width: 36px !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
 
 nav button.nav-lang-btn.btn,
 html[lang="ur"] nav button.nav-lang-btn.btn {
-  padding-left: 10px !important;
-  padding-right: 10px !important;
+  padding-inline: 10px !important;
 }
 
 nav .nav-lang-label,
@@ -3495,17 +3550,68 @@ html[lang="ur"] nav button.nav-control-btn span {
   font-size: 13px !important;
   line-height: 1 !important;
   padding-block: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+html[lang="ur"] nav button.nav-control-btn [data-lucide],
+html[lang="ur"] nav button.nav-control-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+  flex-shrink: 0 !important;
 }
 
 /* Language dropdown — match button text size */
+
+nav .nav-lang-menu {
+  width: 8rem !important;
+  padding-block: 0.25rem !important;
+}
 
 nav .nav-lang-menu a.nav-lang-option,
 nav .nav-lang-menu a.nav-lang-option span,
 html[lang="ur"] nav .nav-lang-menu a.nav-lang-option,
 html[lang="ur"] nav .nav-lang-menu a.nav-lang-option span {
   font-size: 13px !important;
-  line-height: 1.4 !important;
+  line-height: 1.2 !important;
   padding-block: 0 !important;
+  min-height: 0 !important;
+}
+
+html[lang="ur"] nav .nav-lang-menu,
+html[lang="ur"] nav .nav-lang-menu[class*="rounded-xl"] {
+  padding-block: 0.25rem !important;
+}
+
+nav .nav-lang-menu a.nav-lang-option {
+  min-height: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+nav .nav-lang-menu a[lang="en"],
+nav .nav-lang-menu a[lang="en"] span {
+  font-family: Inter, system-ui, sans-serif !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  font-weight: 600 !important;
+}
+
+html[lang="ur"] nav .nav-lang-menu a[lang="en"],
+html[lang="ur"] nav .nav-lang-menu a[lang="en"] span,
+html[lang="ur"] nav .nav-lang-menu a[lang="en"] .nav-lang-option-label {
+  font-family: Inter, system-ui, sans-serif !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  font-weight: 600 !important;
+}
+
+html[lang="ur"] nav .nav-lang-menu a[lang="ur"],
+html[lang="ur"] nav .nav-lang-menu a[lang="ur"] span,
+html[lang="ur"] nav .nav-lang-menu a[lang="ur"] .nav-lang-option-label {
+  font-size: 13px !important;
+  line-height: 1.25 !important;
 }
 
 /* Form inputs, selects, textareas */

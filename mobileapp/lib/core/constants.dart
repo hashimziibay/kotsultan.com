@@ -50,4 +50,6 @@ class AppConstants {
   static const String prefLocale = 'user_locale';
   static const String prefTheme = 'user_theme';
   static const String prefOnboarded = 'onboarded';
+  static const String prefPendingUserSync = 'pending_user_sync';
+  static const String prefUserId = 'user_id';
 }

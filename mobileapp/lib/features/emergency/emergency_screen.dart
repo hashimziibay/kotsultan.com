@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/offline_banner.dart';
 import '../shell/app_drawer.dart';
 
 class EmergencyScreen extends StatefulWidget {
@@ -20,22 +21,41 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   Timer? _debounce;
 
   bool _loading = true;
+  bool _fromCache = false;
   String? _error;
   List<dynamic> _items = [];
   List<dynamic> _categories = [];
   String? _category;
+  int _seenEpoch = -1;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final app = context.read<AppState>();
+      app.addListener(_onAppChanged);
+      _seenEpoch = app.catalogEpoch;
+      _load();
+    });
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
+    try {
+      context.read<AppState>().removeListener(_onAppChanged);
+    } catch (_) {}
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _onAppChanged() {
+    if (!mounted) return;
+    final epoch = context.read<AppState>().catalogEpoch;
+    if (epoch != _seenEpoch) {
+      _seenEpoch = epoch;
+      _load();
+    }
   }
 
   Future<void> _load() async {
@@ -45,14 +65,11 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
     });
 
     try {
-      final query = <String, String>{
-        'per_page': '100',
-        if (_searchCtrl.text.trim().isNotEmpty) 'q': _searchCtrl.text.trim(),
-        if (_category != null && _category!.isNotEmpty) 'category': _category!,
-      };
-
-      final res = await context.read<AppState>().api.get('emergency', query: query);
-      final data = (res['data'] as Map?) ?? {};
+      final res = await context.read<AppState>().catalog.getEmergency(
+        q: _searchCtrl.text.trim().isEmpty ? null : _searchCtrl.text.trim(),
+        category: _category,
+      );
+      final data = res.data;
 
       setState(() {
         _items = List<dynamic>.from((data['items'] as List?) ?? const []);
@@ -60,6 +77,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
         if (cats is List && cats.isNotEmpty) {
           _categories = List<dynamic>.from(cats);
         }
+        _fromCache = res.fromCache;
       });
     } catch (e) {
       setState(() {
@@ -93,6 +111,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
       ),
       body: Column(
         children: [
+          OfflineBanner(visible: _fromCache),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: TextField(

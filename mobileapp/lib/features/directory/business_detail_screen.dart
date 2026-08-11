@@ -31,8 +31,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
       _error = null;
     });
     try {
-      final res = await context.read<AppState>().api.get('businesses/${widget.idOrSlug}');
-      setState(() => _biz = res['data'] as Map<String, dynamic>);
+      final res = await context.read<AppState>().catalog.getBusiness(widget.idOrSlug);
+      setState(() => _biz = res.data);
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {

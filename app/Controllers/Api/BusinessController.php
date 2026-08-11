@@ -15,7 +15,7 @@ class BusinessController extends BaseApiController
         $q        = $this->request->getGet('q');
         $category = $this->request->getGet('category');
         $page     = max(1, (int) ($this->request->getGet('page') ?? 1));
-        $perPage  = min(50, max(1, (int) ($this->request->getGet('per_page') ?? 30)));
+        $perPage  = min(200, max(1, (int) ($this->request->getGet('per_page') ?? 30)));
 
         $result = (new BusinessModel())->searchDirectory($q, $category, null, $page, $perPage);
 
@@ -75,18 +75,19 @@ class BusinessController extends BaseApiController
             : ($this->absoluteUrl($b['image'] ?? '') ?? '');
 
         return [
-            'id'         => (int) $b['id'],
-            'slug'       => $b['seo_slug'] ?? ($b['slug'] ?? null),
-            'name'       => $b['display_name'] ?? ($b['name_en'] ?? ''),
-            'name_en'    => $b['name_en'] ?? '',
-            'name_ur'    => $b['name_ur'] ?? '',
-            'owner_name' => $b['owner_name'] ?? '',
-            'phone'      => $b['phone'] ?? '',
-            'whatsapp'   => $b['whatsapp'] ?? '',
-            'address'    => $b['display_address'] ?? '',
-            'category'   => $b['display_category_name'] ?? '',
-            'image'      => $image,
-            'featured'   => (bool) ($b['featured'] ?? false),
+            'id'          => (int) $b['id'],
+            'slug'        => $b['seo_slug'] ?? ($b['slug'] ?? null),
+            'name'        => $b['display_name'] ?? ($b['name_en'] ?? ''),
+            'name_en'     => $b['name_en'] ?? '',
+            'name_ur'     => $b['name_ur'] ?? '',
+            'owner_name'  => $b['owner_name'] ?? '',
+            'phone'       => $b['phone'] ?? '',
+            'whatsapp'    => $b['whatsapp'] ?? '',
+            'address'     => $b['display_address'] ?? '',
+            'category'    => $b['display_category_name'] ?? '',
+            'category_id' => isset($b['category_id']) ? (int) $b['category_id'] : null,
+            'image'       => $image,
+            'featured'    => (bool) ($b['featured'] ?? false),
         ];
     }
 

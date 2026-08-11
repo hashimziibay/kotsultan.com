@@ -44,12 +44,12 @@ ThemeData buildLightTheme() {
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.slate50,
       indicatorColor: AppColors.tealSoft,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
         return TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           color: selected ? AppColors.emeraldDark : AppColors.slate500,
         );
@@ -73,7 +73,16 @@ ThemeData buildLightTheme() {
     chipTheme: base.chipTheme.copyWith(
       selectedColor: AppColors.tealSoft,
       checkmarkColor: AppColors.emeraldDark,
-      labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+      labelStyle: const TextStyle(
+        fontWeight: FontWeight.w600,
+        fontSize: 13,
+        color: AppColors.emeraldDark,
+      ),
+      secondaryLabelStyle: const TextStyle(
+        fontWeight: FontWeight.w600,
+        fontSize: 13,
+        color: AppColors.slate700,
+      ),
       side: const BorderSide(color: AppColors.slate200),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
@@ -125,6 +134,20 @@ ThemeData buildDarkTheme() {
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.slate800,
       indicatorColor: AppColors.emerald.withValues(alpha: 0.25),
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        final selected = states.contains(WidgetState.selected);
+        return TextStyle(
+          fontSize: 11,
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          color: selected ? AppColors.emeraldLight : Colors.white70,
+        );
+      }),
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        final selected = states.contains(WidgetState.selected);
+        return IconThemeData(
+          color: selected ? AppColors.emeraldLight : Colors.white70,
+        );
+      }),
     ),
     cardTheme: CardThemeData(
       color: AppColors.slate800,

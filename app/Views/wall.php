@@ -73,40 +73,82 @@
                         <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400"><?= lang('App.categories') ?? 'Categories' ?></h3>
                     </div>
                     
-                    <div class="p-4">
-                        <nav class="space-y-1.5">
-                            <?php 
-                                $isAllActive = ($selectedCategory === 'all' || empty($selectedCategory));
-                                $allParams = [];
-                                if (!empty($searchQuery)) $allParams['q'] = $searchQuery;
-                                if (!empty($selectedSort)) $allParams['sort'] = $selectedSort;
-                                $allUrl = base_url('wall-of-kot-sultan' . (!empty($allParams) ? '?' . http_build_query($allParams) : ''));
-                            ?>
-                            <a href="<?= $allUrl ?>" class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 <?= $isAllActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent' ?>">
-                                <div class="flex items-center gap-3">
-                                    <i data-lucide="users" class="w-4.5 h-4.5 <?= $isAllActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' ?>"></i>
-                                    <span class="text-[15px]"><?= lang('App.all_wall_categories') ?></span>
+                    <div class="p-4" x-data="{ showAllCats: false }">
+                        <?php
+                            $featuredWallCats = array_slice($wallCategories ?? [], 0, 4);
+                            $extraWallCats = array_slice($wallCategories ?? [], 4);
+                            $extraCount = count($extraWallCats);
+                            $isAllActive = ($selectedCategory === 'all' || empty($selectedCategory));
+                            $allParams = [];
+                            if (!empty($searchQuery)) $allParams['q'] = $searchQuery;
+                            if (!empty($selectedSort)) $allParams['sort'] = $selectedSort;
+                            $allUrl = base_url('wall-of-kot-sultan' . (!empty($allParams) ? '?' . http_build_query($allParams) : ''));
+                        ?>
+                        <div class="rounded-2xl border border-emerald-100 dark:border-emerald-900/40 bg-gradient-to-b from-emerald-50/80 to-white dark:from-emerald-950/30 dark:to-slate-800/40 p-3 mb-3">
+                            <div class="flex items-center gap-2 mb-3 px-1">
+                                <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">
+                                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                </span>
+                                <div>
+                                    <p class="text-xs font-extrabold text-slate-800 dark:text-slate-100 leading-tight"><?= $isUrdu ? 'اہم زمرے' : 'Important categories' ?></p>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-tight"><?= $isUrdu ? 'مقبول زمروں سے شروع کریں' : 'Start with the most popular ones' ?></p>
                                 </div>
-                            </a>
-                            
-                            <?php foreach ($wallCategories as $cat): ?>
-                                <?php 
-                                    $catSlug = $cat['slug'] ?: $cat['id'];
-                                    $catName = $isUrdu ? ($cat['name_ur'] ?: $cat['name_en']) : ($cat['name_en'] ?: $cat['name_ur']);
-                                    $isActive = ($selectedCategory == $cat['id'] || $selectedCategory === $cat['slug'] || $selectedCategory === $cat['name_en']);
-                                    $queryParams = [];
-                                    if (!empty($searchQuery)) $queryParams['q'] = $searchQuery;
-                                    if (!empty($selectedSort)) $queryParams['sort'] = $selectedSort;
-                                    $queryParams['category'] = $catSlug;
-                                ?>
-                                <a href="<?= base_url('wall-of-kot-sultan?' . http_build_query($queryParams)) ?>" class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 <?= $isActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent' ?>">
+                            </div>
+                            <nav class="space-y-1.5">
+                                <a href="<?= $allUrl ?>" class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 <?= $isAllActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'bg-white/80 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700' ?>">
                                     <div class="flex items-center gap-3">
-                                        <i data-lucide="<?= esc($cat['icon'] ?: 'user') ?>" class="w-4.5 h-4.5 <?= $isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' ?>"></i>
-                                        <span class="text-[15px]"><?= esc($catName) ?></span>
+                                        <i data-lucide="users" class="w-4.5 h-4.5 <?= $isAllActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' ?>"></i>
+                                        <span class="text-[15px]"><?= lang('App.all_wall_categories') ?></span>
                                     </div>
                                 </a>
-                            <?php endforeach; ?>
-                        </nav>
+                                <?php foreach ($featuredWallCats as $cat): ?>
+                                    <?php
+                                        $catSlug = $cat['slug'] ?: $cat['id'];
+                                        $catName = $isUrdu ? ($cat['name_ur'] ?: $cat['name_en']) : ($cat['name_en'] ?: $cat['name_ur']);
+                                        $isActive = ($selectedCategory == $cat['id'] || $selectedCategory === $cat['slug'] || $selectedCategory === $cat['name_en']);
+                                        $queryParams = [];
+                                        if (!empty($searchQuery)) $queryParams['q'] = $searchQuery;
+                                        if (!empty($selectedSort)) $queryParams['sort'] = $selectedSort;
+                                        $queryParams['category'] = $catSlug;
+                                    ?>
+                                    <a href="<?= base_url('wall-of-kot-sultan?' . http_build_query($queryParams)) ?>" class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 <?= $isActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'bg-white/80 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700' ?>">
+                                        <div class="flex items-center gap-3">
+                                            <i data-lucide="<?= esc($cat['icon'] ?: 'user') ?>" class="w-4.5 h-4.5 <?= $isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' ?>"></i>
+                                            <span class="text-[15px]"><?= esc($catName) ?></span>
+                                        </div>
+                                    </a>
+                                <?php endforeach; ?>
+                            </nav>
+                        </div>
+
+                        <?php if ($extraCount > 0): ?>
+                            <button type="button"
+                                    @click="showAllCats = !showAllCats"
+                                    class="w-full mb-2 h-11 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-bold text-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center justify-center gap-2">
+                                <i data-lucide="chevrons-down" class="w-4 h-4" x-show="!showAllCats"></i>
+                                <i data-lucide="chevrons-up" class="w-4 h-4" x-show="showAllCats" x-cloak></i>
+                                <span x-text="showAllCats ? '<?= $isUrdu ? 'کم دکھائیں' : 'Show less' ?>' : '<?= $isUrdu ? 'مزید دیکھنے کے لیے کلک کریں (' . $extraCount . ')' : 'Click to view more (' . $extraCount . ')' ?>'"></span>
+                            </button>
+                            <nav class="space-y-1.5" x-show="showAllCats" x-cloak x-transition>
+                                <?php foreach ($extraWallCats as $cat): ?>
+                                    <?php
+                                        $catSlug = $cat['slug'] ?: $cat['id'];
+                                        $catName = $isUrdu ? ($cat['name_ur'] ?: $cat['name_en']) : ($cat['name_en'] ?: $cat['name_ur']);
+                                        $isActive = ($selectedCategory == $cat['id'] || $selectedCategory === $cat['slug'] || $selectedCategory === $cat['name_en']);
+                                        $queryParams = [];
+                                        if (!empty($searchQuery)) $queryParams['q'] = $searchQuery;
+                                        if (!empty($selectedSort)) $queryParams['sort'] = $selectedSort;
+                                        $queryParams['category'] = $catSlug;
+                                    ?>
+                                    <a href="<?= base_url('wall-of-kot-sultan?' . http_build_query($queryParams)) ?>" class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 <?= $isActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent' ?>">
+                                        <div class="flex items-center gap-3">
+                                            <i data-lucide="<?= esc($cat['icon'] ?: 'user') ?>" class="w-4.5 h-4.5 <?= $isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' ?>"></i>
+                                            <span class="text-[15px]"><?= esc($catName) ?></span>
+                                        </div>
+                                    </a>
+                                <?php endforeach; ?>
+                            </nav>
+                        <?php endif; ?>
                     </div>
                 </div>
             </aside>
@@ -154,32 +196,73 @@
                         <hr class="border-slate-200 dark:border-slate-700 mb-4">
                         
                         <!-- Mobile Categories -->
-                        <nav class="space-y-1.5">
-                            <a href="<?= $allUrl ?>" class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 <?= $isAllActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent' ?>">
-                                <div class="flex items-center gap-3">
-                                    <i data-lucide="users" class="w-4.5 h-4.5 <?= $isAllActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' ?>"></i>
-                                    <span class="text-[15px]"><?= lang('App.all_wall_categories') ?></span>
-                                </div>
-                            </a>
-                            
-                            <?php foreach ($wallCategories as $cat): ?>
-                                <?php 
-                                    $catSlug = $cat['slug'] ?: $cat['id'];
-                                    $catName = $isUrdu ? ($cat['name_ur'] ?: $cat['name_en']) : ($cat['name_en'] ?: $cat['name_ur']);
-                                    $isActive = ($selectedCategory == $cat['id'] || $selectedCategory === $cat['slug'] || $selectedCategory === $cat['name_en']);
-                                    $queryParams = [];
-                                    if (!empty($searchQuery)) $queryParams['q'] = $searchQuery;
-                                    if (!empty($selectedSort)) $queryParams['sort'] = $selectedSort;
-                                    $queryParams['category'] = $catSlug;
-                                ?>
-                                <a href="<?= base_url('wall-of-kot-sultan?' . http_build_query($queryParams)) ?>" class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 <?= $isActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent' ?>">
-                                    <div class="flex items-center gap-3">
-                                        <i data-lucide="<?= esc($cat['icon'] ?: 'user') ?>" class="w-4.5 h-4.5 <?= $isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' ?>"></i>
-                                        <span class="text-[15px]"><?= esc($catName) ?></span>
+                        <div x-data="{ showAllCatsMobile: false }">
+                            <div class="rounded-2xl border border-emerald-100 dark:border-emerald-900/40 bg-gradient-to-b from-emerald-50/80 to-white dark:from-emerald-950/30 dark:to-slate-800/40 p-3 mb-3">
+                                <div class="flex items-center gap-2 mb-3 px-1">
+                                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">
+                                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                    </span>
+                                    <div>
+                                        <p class="text-xs font-extrabold text-slate-800 dark:text-slate-100 leading-tight"><?= $isUrdu ? 'اہم زمرے' : 'Important categories' ?></p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-tight"><?= $isUrdu ? 'مقبول زمروں سے شروع کریں' : 'Start with the most popular ones' ?></p>
                                     </div>
-                                </a>
-                            <?php endforeach; ?>
-                        </nav>
+                                </div>
+                                <nav class="space-y-1.5">
+                                    <a href="<?= $allUrl ?>" class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 <?= $isAllActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'bg-white/80 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700' ?>">
+                                        <div class="flex items-center gap-3">
+                                            <i data-lucide="users" class="w-4.5 h-4.5 <?= $isAllActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' ?>"></i>
+                                            <span class="text-[15px]"><?= lang('App.all_wall_categories') ?></span>
+                                        </div>
+                                    </a>
+                                    <?php foreach ($featuredWallCats as $cat): ?>
+                                        <?php
+                                            $catSlug = $cat['slug'] ?: $cat['id'];
+                                            $catName = $isUrdu ? ($cat['name_ur'] ?: $cat['name_en']) : ($cat['name_en'] ?: $cat['name_ur']);
+                                            $isActive = ($selectedCategory == $cat['id'] || $selectedCategory === $cat['slug'] || $selectedCategory === $cat['name_en']);
+                                            $queryParams = [];
+                                            if (!empty($searchQuery)) $queryParams['q'] = $searchQuery;
+                                            if (!empty($selectedSort)) $queryParams['sort'] = $selectedSort;
+                                            $queryParams['category'] = $catSlug;
+                                        ?>
+                                        <a href="<?= base_url('wall-of-kot-sultan?' . http_build_query($queryParams)) ?>" class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 <?= $isActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'bg-white/80 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700' ?>">
+                                            <div class="flex items-center gap-3">
+                                                <i data-lucide="<?= esc($cat['icon'] ?: 'user') ?>" class="w-4.5 h-4.5 <?= $isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' ?>"></i>
+                                                <span class="text-[15px]"><?= esc($catName) ?></span>
+                                            </div>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </nav>
+                            </div>
+
+                            <?php if ($extraCount > 0): ?>
+                                <button type="button"
+                                        @click="showAllCatsMobile = !showAllCatsMobile"
+                                        class="w-full mb-2 h-11 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-bold text-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center justify-center gap-2">
+                                    <i data-lucide="chevrons-down" class="w-4 h-4" x-show="!showAllCatsMobile"></i>
+                                    <i data-lucide="chevrons-up" class="w-4 h-4" x-show="showAllCatsMobile" x-cloak></i>
+                                    <span x-text="showAllCatsMobile ? '<?= $isUrdu ? 'کم دکھائیں' : 'Show less' ?>' : '<?= $isUrdu ? 'مزید دیکھنے کے لیے کلک کریں (' . $extraCount . ')' : 'Click to view more (' . $extraCount . ')' ?>'"></span>
+                                </button>
+                                <nav class="space-y-1.5" x-show="showAllCatsMobile" x-cloak x-transition>
+                                    <?php foreach ($extraWallCats as $cat): ?>
+                                        <?php
+                                            $catSlug = $cat['slug'] ?: $cat['id'];
+                                            $catName = $isUrdu ? ($cat['name_ur'] ?: $cat['name_en']) : ($cat['name_en'] ?: $cat['name_ur']);
+                                            $isActive = ($selectedCategory == $cat['id'] || $selectedCategory === $cat['slug'] || $selectedCategory === $cat['name_en']);
+                                            $queryParams = [];
+                                            if (!empty($searchQuery)) $queryParams['q'] = $searchQuery;
+                                            if (!empty($selectedSort)) $queryParams['sort'] = $selectedSort;
+                                            $queryParams['category'] = $catSlug;
+                                        ?>
+                                        <a href="<?= base_url('wall-of-kot-sultan?' . http_build_query($queryParams)) ?>" class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 <?= $isActive ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent' ?>">
+                                            <div class="flex items-center gap-3">
+                                                <i data-lucide="<?= esc($cat['icon'] ?: 'user') ?>" class="w-4.5 h-4.5 <?= $isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' ?>"></i>
+                                                <span class="text-[15px]"><?= esc($catName) ?></span>
+                                            </div>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </nav>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
 

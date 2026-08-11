@@ -6,6 +6,7 @@ import '../../core/state/app_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../profile/profile_screen.dart';
 import '../shell/app_drawer.dart';
+import 'about_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -74,9 +75,12 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final muted = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white60
+        : Colors.grey.shade600;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 4, right: 4),
-      child: Text(text, style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w700, fontSize: 12)),
+      child: Text(text, style: TextStyle(color: muted, fontWeight: FontWeight.w700, fontSize: 12)),
     );
   }
 }
@@ -108,164 +112,29 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListTile(
       onTap: onTap,
       leading: Container(
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
+          color: color.withValues(alpha: isDark ? 0.22 : 0.12),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(icon, color: color),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-      subtitle: Text(subtitle),
-      trailing: const Icon(Icons.chevron_right_rounded),
-    );
-  }
-}
-
-class AboutPage extends StatelessWidget {
-  const AboutPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final app = context.watch<AppState>();
-    return Scaffold(
-      appBar: AppBar(title: Text(app.t(en: 'About', ur: 'ہمارے بارے میں'))),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _InfoHero(
-            icon: Icons.info_rounded,
-            title: app.t(en: 'About Kot Sultan Directory', ur: 'کوٹ سلطان ڈائریکٹری کے بارے میں'),
-            body: app.t(
-              en: 'KotSultan.com is the digital directory for Kot Sultan, Pakistan, founded by Muhammad Hashim, Director of ZIIBAY SOFT and VERTEX SCHOOL SYSTEM & IT ACADEMY. It helps residents and visitors connect with local businesses, schools, clinics, and essential services.',
-              ur: 'کوٹ سلطان ڈاٹ کام مقامی کاروبار، اسکولز، کلینکس اور ضروری خدمات سے جوڑنے کے لیے بنائی گئی ڈیجیٹل ڈائریکٹری ہے، جس کے بانی محمد ہاشم ہیں — ڈائریکٹر، زیبے سافٹ اور ورٹیکس اسکول سسٹم اینڈ آئی ٹی اکیڈمی۔',
-            ),
-          ),
-          const SizedBox(height: 12),
-          _FounderCard(app: app),
-          const SizedBox(height: 12),
-          _InfoCard(
-            icon: Icons.flag_rounded,
-            title: app.t(en: 'Our Mission', ur: 'ہمارا مشن'),
-            body: app.t(
-              en: 'To empower residents, shopkeepers, and visitors with a clean, fast directory that connects people with local businesses and community helpers.',
-              ur: 'مقامی رہائشیوں، دکانداروں اور زائرین کو تیز اور صاف ڈائریکٹری فراہم کرنا۔',
-            ),
-          ),
-          const SizedBox(height: 12),
-          _InfoCard(
-            icon: Icons.visibility_rounded,
-            title: app.t(en: 'Our Vision', ur: 'ہماری ویژن'),
-            body: app.t(
-              en: 'To make Kot Sultan one of the most digitally connected towns in Punjab while preserving community heritage.',
-              ur: 'کوٹ سلطان کو پنجاب کے سب سے زیادہ ڈیجیٹل طور پر منسلک قصبوں میں شامل کرنا۔',
-            ),
-          ),
-          const SizedBox(height: 12),
-          _InfoCard(
-            icon: Icons.map_rounded,
-            title: app.t(en: 'Location', ur: 'مقام'),
-            body: app.t(
-              en: 'District Layyah, Punjab — along the Indus corridor with connections to Layyah, Chowk Azam, and Dera Ghazi Khan.',
-              ur: 'ضلع لیہ، پنجاب — لیہ، چوک اعظم اور ڈیرہ غازی خان سے منسلک۔',
-            ),
-          ),
-        ],
+      title: Text(
+        title,
+        style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface),
       ),
-    );
-  }
-}
-
-class _FounderCard extends StatelessWidget {
-  const _FounderCard({required this.app});
-  final AppState app;
-
-  static const phone = '03136350169';
-  static const phoneDisplay = '0313 6350169';
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: AppColors.tealSoft,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(Icons.person_rounded, color: AppColors.emeraldDark, size: 28),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        app.t(en: 'Founder', ur: 'بانی'),
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w600),
-                      ),
-                      const Text(
-                        'Muhammad Hashim',
-                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              app.t(
-                en: 'Founder of KotSultan.com',
-                ur: 'کوٹ سلطان ڈاٹ کام کے بانی',
-              ),
-              style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.emeraldDark),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              app.t(
-                en: 'Director, ZIIBAY SOFT and VERTEX SCHOOL SYSTEM & IT ACADEMY',
-                ur: 'ڈائریکٹر، زیبے سافٹ اور ورٹیکس اسکول سسٹم اینڈ آئی ٹی اکیڈمی',
-              ),
-              style: TextStyle(color: Colors.grey.shade700, height: 1.35),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    phoneDisplay,
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                    textDirection: TextDirection.ltr,
-                  ),
-                ),
-                FilledButton.icon(
-                  onPressed: () => launchUrl(Uri.parse('tel:$phone')),
-                  icon: const Icon(Icons.call_rounded, size: 18),
-                  label: Text(app.t(en: 'Call', ur: 'کال')),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  onPressed: () => launchUrl(Uri.parse('https://wa.me/923136350169')),
-                  icon: const Icon(Icons.chat_rounded, size: 18),
-                  label: const Text('WhatsApp'),
-                ),
-              ],
-            ),
-          ],
-        ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(color: isDark ? Colors.white70 : scheme.onSurfaceVariant),
       ),
+      trailing: Icon(Icons.chevron_right_rounded, color: isDark ? Colors.white54 : scheme.onSurfaceVariant),
     );
   }
 }
@@ -416,6 +285,10 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final bodyMuted = isDark ? const Color(0xFFCBD5E1) : Colors.grey.shade700;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -426,19 +299,22 @@ class _InfoCard extends StatelessWidget {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: AppColors.tealSoft,
+                color: isDark ? AppColors.emerald.withValues(alpha: 0.22) : AppColors.tealSoft,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppColors.emeraldDark),
+              child: Icon(icon, color: isDark ? AppColors.emeraldLight : AppColors.emeraldDark),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                  Text(
+                    title,
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: onSurface),
+                  ),
                   const SizedBox(height: 6),
-                  Text(body, style: TextStyle(color: Colors.grey.shade700, height: 1.4)),
+                  Text(body, style: TextStyle(color: bodyMuted, height: 1.4, fontSize: 14)),
                 ],
               ),
             ),

@@ -24,6 +24,26 @@ use CodeIgniter\HotReloader\HotReloader;
  */
 
 Events::on('pre_system', static function (): void {
+    // Never allow /public in generated URLs on the live domain.
+    $host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    $host = preg_replace('/:\d+$/', '', $host) ?: '';
+    if ($host !== '' && preg_match('/(^|\.)kotsultan\.com$/', $host)) {
+        $isSecure = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+            || (isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443');
+        $cleanBase = ($isSecure ? 'https://' : 'http://') . $host . '/';
+        putenv('app.baseURL=' . $cleanBase);
+        $_ENV['app.baseURL']    = $cleanBase;
+        $_SERVER['app.baseURL'] = $cleanBase;
+        try {
+            $app = config('App');
+            $app->baseURL   = $cleanBase;
+            $app->indexPage = '';
+        } catch (\Throwable $e) {
+            // Config may not be ready yet; index.php / App constructor still force it.
+        }
+    }
+
     if (ENVIRONMENT !== 'testing') {
         $value = ini_get('zlib.output_compression');
 
