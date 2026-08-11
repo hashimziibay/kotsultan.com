@@ -56,6 +56,8 @@ class BusinessModel extends Model
     {
         $locale = $this->locale();
         $builder = $this->baseQuery()->where('businesses.status', 'active');
+        $q       = trim((string) ($query ?? ''));
+        $joinedBusinessTags = false;
 
         if (!empty($categoryId)) {
             // Category links may use:
@@ -81,10 +83,17 @@ class BusinessModel extends Model
 
         if (!empty($tagId)) {
             $builder->join('business_tags', 'business_tags.business_id = businesses.id')
-                    ->where('business_tags.tag_id', $tagId);
+                    ->where('business_tags.tag_id', (int) $tagId);
+            $joinedBusinessTags = true;
         }
 
-        if ($query !== null && trim((string)$query) !== '') {
+        if ($q !== '') {
+            // Include tags in primary fuzzy search so tag keywords match listings.
+            if (! $joinedBusinessTags) {
+                $builder->join('business_tags', 'business_tags.business_id = businesses.id', 'left');
+            }
+            $builder->join('tags', 'tags.id = business_tags.tag_id', 'left');
+
             helper('search');
             apply_fuzzy_search($builder, [
                 'businesses.name_en',
@@ -102,7 +111,11 @@ class BusinessModel extends Model
                 'villages.name_ur',
                 'businesses.phone',
                 'businesses.whatsapp',
-            ], trim((string) $query));
+                'tags.name_en',
+                'tags.name_ur',
+                'tags.slug',
+            ], $q);
+            $builder->groupBy('businesses.id');
         }
 
         if ($perPage === null) {
@@ -112,7 +125,7 @@ class BusinessModel extends Model
             return $this->localizedRows($rows);
         }
 
-        $page = max(1, (int)$page);
+        $page = max(1, (int) $page);
         $total = $builder->countAllResults(false);
         $offset = ($page - 1) * $perPage;
 
@@ -121,13 +134,94 @@ class BusinessModel extends Model
                        ->limit($perPage, $offset)
                        ->findAll();
 
-        return [
-            'businesses' => $this->localizedRows($rows),
-            'total'      => $total,
-            'page'       => $page,
-            'perPage'    => $perPage,
-            'totalPages' => (int) ceil($total / $perPage),
+        $result = [
+            'businesses'         => $this->localizedRows($rows),
+            'total'              => $total,
+            'page'               => $page,
+            'perPage'            => $perPage,
+            'totalPages'         => (int) ceil($total / max(1, $perPage)),
+            'suggestions'        => [],
+            'suggested_tags'     => [],
+            'suggestion_reason'  => null,
         ];
+
+        // When nothing exact matches, suggest businesses linked to similar tags.
+        if ($total === 0 && $q !== '' && empty($tagId)) {
+            $suggestedTags = $this->findSimilarTags($q, 8);
+            $tagIds        = array_map(static fn ($t) => (int) $t['id'], $suggestedTags);
+            $suggestions   = $tagIds !== [] ? $this->findBusinessesByTagIds($tagIds, 12) : [];
+
+            if ($suggestedTags !== [] || $suggestions !== []) {
+                $result['suggested_tags']    = $suggestedTags;
+                $result['suggestions']       = $suggestions;
+                $result['suggestion_reason'] = 'similar_tags';
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Fuzzy-match tags for "did you mean" suggestions.
+     *
+     * @return list<array{id:int,slug:?string,name:string,name_en:string,name_ur:string}>
+     */
+    public function findSimilarTags(string $query, int $limit = 8): array
+    {
+        $q = trim($query);
+        if ($q === '') {
+            return [];
+        }
+
+        helper('search');
+        $locale  = $this->locale();
+        $builder = $this->db->table('tags')->select('tags.id, tags.slug, tags.name_en, tags.name_ur');
+        apply_fuzzy_search($builder, ['tags.name_en', 'tags.name_ur', 'tags.slug'], $q);
+
+        $rows = $builder->orderBy("tags.name_{$locale}", 'ASC')
+                        ->limit(max(1, $limit))
+                        ->get()
+                        ->getResultArray();
+
+        return array_map(static function (array $t) use ($locale) {
+            $nameEn = trim((string) ($t['name_en'] ?? ''));
+            $nameUr = trim((string) ($t['name_ur'] ?? ''));
+            $name   = $locale === 'ur' ? ($nameUr !== '' ? $nameUr : $nameEn) : ($nameEn !== '' ? $nameEn : $nameUr);
+
+            return [
+                'id'      => (int) $t['id'],
+                'slug'    => $t['slug'] ?? null,
+                'name'    => $name,
+                'name_en' => $nameEn,
+                'name_ur' => $nameUr,
+            ];
+        }, $rows);
+    }
+
+    /**
+     * Active businesses linked to any of the given tag ids.
+     *
+     * @param list<int> $tagIds
+     */
+    public function findBusinessesByTagIds(array $tagIds, int $limit = 12): array
+    {
+        $tagIds = array_values(array_unique(array_filter(array_map('intval', $tagIds))));
+        if ($tagIds === []) {
+            return [];
+        }
+
+        $locale = $this->locale();
+        $rows   = $this->baseQuery()
+            ->join('business_tags', 'business_tags.business_id = businesses.id')
+            ->where('businesses.status', 'active')
+            ->whereIn('business_tags.tag_id', $tagIds)
+            ->groupBy('businesses.id')
+            ->orderBy('businesses.featured', 'DESC')
+            ->orderBy("businesses.name_{$locale}", 'ASC')
+            ->limit(max(1, $limit))
+            ->findAll();
+
+        return $this->localizedRows($rows);
     }
 
     public function getLocalizedBusiness($idOrSlug): ?array

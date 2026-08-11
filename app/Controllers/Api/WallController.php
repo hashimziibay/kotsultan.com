@@ -53,10 +53,22 @@ class WallController extends BaseApiController
         }
 
         $related = $model->getRelatedPersonalities($entry['category_id'] ?? null, $entry['id'], 4);
+        $attachments = (new \App\Models\WallAttachmentModel())->getForWall((int) $entry['id']);
 
         return $this->jsonOk([
-            'entry'   => $this->mapEntry($entry, true),
-            'related' => array_map(fn ($e) => $this->mapEntry($e), $related),
+            'entry'       => $this->mapEntry($entry, true) + [
+                'attachments' => array_map(function (array $a) {
+                    return [
+                        'id'            => (int) ($a['id'] ?? 0),
+                        'url'           => $this->absoluteUrl($a['file_path'] ?? '') ?: ($a['url'] ?? ''),
+                        'original_name' => $a['original_name'] ?? '',
+                        'mime_type'     => $a['mime_type'] ?? '',
+                        'file_type'     => $a['file_type'] ?? 'other',
+                        'file_size'     => (int) ($a['file_size'] ?? 0),
+                    ];
+                }, $attachments),
+            ],
+            'related'     => array_map(fn ($e) => $this->mapEntry($e), $related),
         ]);
     }
 

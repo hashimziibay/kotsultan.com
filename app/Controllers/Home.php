@@ -252,8 +252,12 @@ class Home extends BaseController
             'perPage'          => $searchData['perPage'],
             'searchQuery'      => $query,
             'selectedCategory' => $selectedCategory,
+            'selectedTag'      => $tagId,
             'directoryBaseUrl' => $directoryBaseUrl,
             'categoryTotals'   => $categoryTotalsMap,
+            'suggestions'      => $searchData['suggestions'] ?? [],
+            'suggestedTags'    => $searchData['suggested_tags'] ?? [],
+            'suggestionReason' => $searchData['suggestion_reason'] ?? null,
         ]);
     }
 
@@ -337,12 +341,14 @@ class Home extends BaseController
             return redirect()->to(base_url('wall-of-kot-sultan'));
         }
 
-        $related = $wallModel->getRelatedPersonalities($personality['category_id'] ?? null, $personality['id'], 3);
+        $related     = $wallModel->getRelatedPersonalities($personality['category_id'] ?? null, $personality['id'], 3);
+        $attachments = (new \App\Models\WallAttachmentModel())->getForWall((int) $personality['id']);
 
         return view('wall_profile', [
             'lang'        => $lang,
             'item'        => $personality,
             'related'     => $related,
+            'attachments' => $attachments,
         ]);
     }
 

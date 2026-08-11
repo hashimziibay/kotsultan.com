@@ -101,6 +101,7 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1"><?= lang('App.admin_photo_upload') ?></label>
                     <input type="file" name="photo" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700">
+                    <p class="text-[10px] text-slate-400 mt-1"><?= lang('App.admin_profile_photo_hint') ?? 'Main profile photo (single image).' ?></p>
                 </div>
 
                 <div>
@@ -109,6 +110,58 @@
                         <option value="active" <?= ($person['status'] ?? 'active') === 'active' ? 'selected' : '' ?>><?= lang('App.admin_active_status') ?></option>
                         <option value="inactive" <?= ($person['status'] ?? '') === 'inactive' ? 'selected' : '' ?>><?= lang('App.admin_inactive_status') ?></option>
                     </select>
+                </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h4 class="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider"><?= lang('App.admin_attachments') ?></h4>
+                        <p class="text-[11px] text-slate-500 mt-1"><?= lang('App.admin_attachments_hint') ?></p>
+                    </div>
+                    <button type="button" id="add-attachment-input" class="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800">
+                        + <?= lang('App.admin_add_more_files') ?>
+                    </button>
+                </div>
+
+                <?php $attachments = $attachments ?? []; ?>
+                <?php if (!empty($attachments)): ?>
+                <div class="space-y-2">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400"><?= lang('App.admin_existing_attachments') ?></p>
+                    <?php foreach ($attachments as $att): ?>
+                    <div class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                        <div class="min-w-0 flex items-center gap-2">
+                            <?php if (($att['file_type'] ?? '') === 'image'): ?>
+                                <img src="<?= esc($att['url']) ?>" alt="" class="w-9 h-9 rounded-lg object-cover border border-slate-200 dark:border-slate-700">
+                            <?php else: ?>
+                                <span class="w-9 h-9 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-extrabold uppercase text-slate-600 dark:text-slate-300">
+                                    <?= esc($att['file_type'] ?? 'file') ?>
+                                </span>
+                            <?php endif; ?>
+                            <div class="min-w-0">
+                                <a href="<?= esc($att['url']) ?>" target="_blank" class="block text-xs font-bold text-emerald-700 dark:text-emerald-400 truncate hover:underline">
+                                    <?= esc($att['original_name'] ?? basename($att['file_path'] ?? '')) ?>
+                                </a>
+                                <p class="text-[10px] text-slate-400"><?= number_format(((int) ($att['file_size'] ?? 0)) / 1024, 1) ?> KB</p>
+                            </div>
+                        </div>
+                        <?php if (!empty($person['id'])): ?>
+                        <form action="<?= base_url('admin/wall-of-kot-sultan/' . $person['id'] . '/attachment/' . $att['id'] . '/delete') ?>" method="POST" onsubmit="return confirm('<?= esc(lang('App.admin_confirm_delete_attachment'), 'js') ?>');">
+                            <?= csrf_field() ?>
+                            <button type="submit" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40" title="<?= lang('App.admin_delete') ?>">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
+                <div id="attachment-inputs" class="space-y-2">
+                    <input type="file" name="attachments[]" multiple
+                           accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                           class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 dark:file:bg-slate-800 dark:file:text-slate-200">
                 </div>
             </div>
         </div>
@@ -123,5 +176,22 @@
         </div>
     </form>
 </div>
+
+<script>
+(() => {
+  const btn = document.getElementById('add-attachment-input');
+  const box = document.getElementById('attachment-inputs');
+  if (!btn || !box) return;
+  btn.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.name = 'attachments[]';
+    input.multiple = true;
+    input.accept = '.jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    input.className = 'w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 dark:file:bg-slate-800 dark:file:text-slate-200';
+    box.appendChild(input);
+  });
+})();
+</script>
 
 <?= $this->endSection() ?>

@@ -14,9 +14,40 @@ class CategoryController extends BaseController
         $categoryModel = new CategoryModel();
         $businessModel = new BusinessModel();
 
-        $categories = $categoryModel->orderBy('display_order', 'ASC')->orderBy('name_en', 'ASC')->findAll();
-        $counts     = $businessModel->getCategoryCounts();
-        $countsMap  = [];
+        $query   = trim((string) $this->request->getGet('q'));
+        $status  = trim((string) ($this->request->getGet('status') ?? ''));
+        $perPage = max(10, min(100, (int) ($this->request->getGet('per_page') ?? 25)));
+        $page    = max(1, (int) ($this->request->getGet('page') ?? 1));
+
+        $builder = $categoryModel->builder();
+
+        if ($query !== '') {
+            $builder->groupStart()
+                ->like('name_en', $query)
+                ->orLike('name_ur', $query)
+                ->orLike('slug', $query)
+                ->groupEnd();
+        }
+        if ($status === 'active' || $status === 'inactive') {
+            $builder->where('status', $status);
+        }
+
+        $total  = $builder->countAllResults(false);
+        $offset = ($page - 1) * $perPage;
+        $totalPages = max(1, (int) ceil($total / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+            $offset = ($page - 1) * $perPage;
+        }
+
+        $categories = $builder->orderBy('display_order', 'ASC')
+            ->orderBy('name_en', 'ASC')
+            ->limit($perPage, $offset)
+            ->get()
+            ->getResultArray();
+
+        $counts    = $businessModel->getCategoryCounts();
+        $countsMap = [];
         foreach ($counts as $c) {
             $countsMap[$c['category_id']] = $c['total'];
         }
@@ -26,6 +57,12 @@ class CategoryController extends BaseController
             'pageHeading' => lang('App.admin_categories_title'),
             'categories'  => $categories,
             'countsMap'   => $countsMap,
+            'total'       => $total,
+            'page'        => $page,
+            'perPage'     => $perPage,
+            'totalPages'  => $totalPages,
+            'query'       => $query,
+            'selectedStatus' => $status,
         ]);
     }
 

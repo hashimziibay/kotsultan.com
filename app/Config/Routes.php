@@ -85,6 +85,7 @@ $routes->group('admin', ['filter' => 'adminAuth'], static function ($routes) {
     $routes->post('wall-of-kot-sultan/edit/(:num)', 'Admin\WallController::update/$1');
     $routes->post('wall-of-kot-sultan/delete/(:num)', 'Admin\WallController::delete/$1');
     $routes->post('wall-of-kot-sultan/toggle/(:num)', 'Admin\WallController::toggle/$1');
+    $routes->post('wall-of-kot-sultan/(:num)/attachment/(:num)/delete', 'Admin\WallController::deleteAttachment/$1/$2');
 
     // Emergency Numbers
     $routes->get('emergency-numbers', 'Admin\EmergencyController::index');

@@ -323,86 +323,22 @@ class _WallScreenState extends State<WallScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      builder: (ctx) {
-        final maxH = MediaQuery.sizeOf(ctx).height * 0.72;
-        return SafeArea(
-          child: SizedBox(
-            height: maxH,
-            child: Column(
-              children: [
-                const SizedBox(height: 10),
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.slate700 : AppColors.slate200,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          app.t(en: 'All categories', ur: 'تمام زمرے'),
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                    itemCount: _categories.length + 1,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, i) {
-                      if (i == 0) {
-                        final selected = _category == null;
-                        return _AllTile(
-                          app: app,
-                          isDark: isDark,
-                          selected: selected,
-                          onTap: () {
-                            Navigator.of(ctx).pop();
-                            _selectCategory(null);
-                          },
-                        );
-                      }
-                      final c = Map<String, dynamic>.from(_categories[i - 1] as Map);
-                      final id = '${c['id']}';
-                      final slug = '${c['slug'] ?? ''}'.trim();
-                      final key = slug.isNotEmpty ? slug : id;
-                      final label = app.isUrdu
-                          ? '${c['name_ur'] ?? c['name_en'] ?? c['name'] ?? ''}'
-                          : '${c['name_en'] ?? c['name_ur'] ?? c['name'] ?? ''}';
-                      final color = _colorFor('${c['color'] ?? ''}', i - 1);
-                      final selected = _category == key || _category == id;
-                      return _CategoryTile(
-                        label: label,
-                        icon: _iconFor('${c['icon'] ?? c['slug'] ?? ''}'),
-                        color: color,
-                        selected: selected,
-                        isDark: isDark,
-                        onTap: () {
-                          Navigator.of(ctx).pop();
-                          _selectCategory(key);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      builder: (ctx) => _WallCategorySearchSheet(
+        app: app,
+        isDark: isDark,
+        categories: _categories,
+        selectedKey: _category,
+        iconFor: _iconFor,
+        colorFor: _colorFor,
+        onSelectAll: () {
+          Navigator.of(ctx).pop();
+          _selectCategory(null);
+        },
+        onSelect: (key) {
+          Navigator.of(ctx).pop();
+          _selectCategory(key);
+        },
+      ),
     );
   }
 }
@@ -705,6 +641,206 @@ class _CategoryTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WallCategorySearchSheet extends StatefulWidget {
+  const _WallCategorySearchSheet({
+    required this.app,
+    required this.isDark,
+    required this.categories,
+    required this.selectedKey,
+    required this.iconFor,
+    required this.colorFor,
+    required this.onSelectAll,
+    required this.onSelect,
+  });
+
+  final AppState app;
+  final bool isDark;
+  final List<dynamic> categories;
+  final String? selectedKey;
+  final IconData Function(String?) iconFor;
+  final Color Function(String?, int) colorFor;
+  final VoidCallback onSelectAll;
+  final ValueChanged<String> onSelect;
+
+  @override
+  State<_WallCategorySearchSheet> createState() => _WallCategorySearchSheetState();
+}
+
+class _WallCategorySearchSheetState extends State<_WallCategorySearchSheet> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  List<MapEntry<int, Map<String, dynamic>>> get _filtered {
+    final q = _query.trim().toLowerCase();
+    final out = <MapEntry<int, Map<String, dynamic>>>[];
+    for (var i = 0; i < widget.categories.length; i++) {
+      final raw = widget.categories[i];
+      if (raw is! Map) continue;
+      final c = Map<String, dynamic>.from(raw);
+      if (q.isEmpty) {
+        out.add(MapEntry(i, c));
+        continue;
+      }
+      final en = '${c['name_en'] ?? ''}'.toLowerCase();
+      final ur = '${c['name_ur'] ?? ''}'.toLowerCase();
+      final name = '${c['name'] ?? ''}'.toLowerCase();
+      final slug = '${c['slug'] ?? ''}'.toLowerCase();
+      if (en.contains(q) || ur.contains(q) || name.contains(q) || slug.contains(q)) {
+        out.add(MapEntry(i, c));
+      }
+    }
+    return out;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final app = widget.app;
+    final isDark = widget.isDark;
+    final filtered = _filtered;
+    final showAllTile = _query.trim().isEmpty;
+    final maxH = MediaQuery.sizeOf(context).height * 0.78;
+
+    return SafeArea(
+      child: SizedBox(
+        height: maxH,
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.slate700 : AppColors.slate200,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      app.t(en: 'All categories', ur: 'تمام زمرے'),
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                onChanged: (v) => setState(() => _query = v),
+                decoration: InputDecoration(
+                  hintText: app.t(en: 'Search categories...', ur: 'زمرے تلاش کریں...'),
+                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.emerald),
+                  suffixIcon: _query.isEmpty
+                      ? null
+                      : IconButton(
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() => _query = '');
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                  filled: true,
+                  fillColor: isDark ? AppColors.slate700 : AppColors.slate50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: isDark ? AppColors.slate700 : const Color(0xFFE6EEEA)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: AppColors.emerald, width: 1.4),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  app.t(
+                    en: '${filtered.length} categories',
+                    ur: '${filtered.length} زمرے',
+                  ),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white54 : AppColors.slate500,
+                  ),
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: (!showAllTile && filtered.isEmpty)
+                  ? Center(
+                      child: Text(
+                        app.t(en: 'No categories found', ur: 'کوئی زمرہ نہیں ملا'),
+                        style: TextStyle(color: isDark ? Colors.white54 : AppColors.slate500),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      itemCount: filtered.length + (showAllTile ? 1 : 0),
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, i) {
+                        if (showAllTile && i == 0) {
+                          return _AllTile(
+                            app: app,
+                            isDark: isDark,
+                            selected: widget.selectedKey == null,
+                            onTap: widget.onSelectAll,
+                          );
+                        }
+                        final entry = filtered[i - (showAllTile ? 1 : 0)];
+                        final c = entry.value;
+                        final id = '${c['id']}';
+                        final slug = '${c['slug'] ?? ''}'.trim();
+                        final key = slug.isNotEmpty ? slug : id;
+                        final label = app.isUrdu
+                            ? '${c['name_ur'] ?? c['name_en'] ?? c['name'] ?? ''}'
+                            : '${c['name_en'] ?? c['name_ur'] ?? c['name'] ?? ''}';
+                        final color = widget.colorFor('${c['color'] ?? ''}', entry.key);
+                        final selected = widget.selectedKey == key || widget.selectedKey == id;
+                        return _CategoryTile(
+                          label: label,
+                          icon: widget.iconFor('${c['icon'] ?? c['slug'] ?? ''}'),
+                          color: color,
+                          selected: selected,
+                          isDark: isDark,
+                          onTap: () => widget.onSelect(key),
+                        );
+                      },
+                    ),
+            ),
+          ],
         ),
       ),
     );

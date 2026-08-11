@@ -25,7 +25,10 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
   String? _error;
   List<dynamic> _items = [];
   List<dynamic> _categories = [];
+  List<dynamic> _suggestions = [];
+  List<dynamic> _suggestedTags = [];
   String? _category;
+  String? _tag;
   int _page = 1;
   int _totalPages = 1;
   int _seenEpoch = -1;
@@ -73,6 +76,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     if (pending == null || pending.isEmpty) return false;
     _debounce?.cancel();
     _searchCtrl.text = pending;
+    _tag = null;
     return true;
   }
 
@@ -80,7 +84,10 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     setState(() {});
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), () {
-      if (mounted) _load();
+      if (mounted) {
+        _tag = null;
+        _load();
+      }
     });
   }
 
@@ -96,12 +103,17 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      if (reset) {
+        _suggestions = [];
+        _suggestedTags = [];
+      }
     });
     try {
       final app = context.read<AppState>();
       final res = await app.catalog.getBusinesses(
         q: _searchCtrl.text.trim().isEmpty ? null : _searchCtrl.text.trim(),
         category: _category,
+        tag: _tag,
         page: _page,
         perPage: 20,
       );
@@ -112,6 +124,10 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
         final pages = data['total_pages'];
         _totalPages = pages is int ? pages : int.tryParse('$pages') ?? 1;
         _fromCache = res.fromCache;
+        if (reset) {
+          _suggestions = List<dynamic>.from((data['suggestions'] as List?) ?? const []);
+          _suggestedTags = List<dynamic>.from((data['suggested_tags'] as List?) ?? const []);
+        }
       });
       app.setOfflineBanner(res.fromCache);
     } catch (e) {
@@ -121,9 +137,29 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     }
   }
 
+  void _openBusiness(Map<String, dynamic> b) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => BusinessDetailScreen(idOrSlug: '${b['id'] ?? b['slug'] ?? ''}'),
+    ));
+  }
+
+  void _applySuggestedTag(Map<String, dynamic> tag) {
+    final id = '${tag['id'] ?? ''}'.trim();
+    if (id.isEmpty) return;
+    setState(() {
+      _tag = id;
+      _category = null;
+      _searchCtrl.clear();
+    });
+    _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasSuggestions = _suggestions.isNotEmpty || _suggestedTags.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(
         leading: const DrawerMenuButton(),
@@ -142,9 +178,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
               style: TextStyle(
                 fontSize: 13,
                 height: 1.35,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white70
-                    : AppColors.slate500,
+                color: isDark ? Colors.white70 : AppColors.slate500,
               ),
             ),
           ),
@@ -155,16 +189,18 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
               textInputAction: TextInputAction.search,
               onSubmitted: (_) {
                 _debounce?.cancel();
+                _tag = null;
                 _load();
               },
               decoration: InputDecoration(
                 hintText: app.t(en: 'Search businesses, phone...', ur: 'کاروبار یا نمبر تلاش کریں...'),
                 prefixIcon: const Icon(Icons.search_rounded, color: AppColors.emerald),
-                suffixIcon: _searchCtrl.text.isEmpty
+                suffixIcon: _searchCtrl.text.isEmpty && _tag == null
                     ? null
                     : IconButton(
                         onPressed: () {
                           _searchCtrl.clear();
+                          setState(() => _tag = null);
                           _load();
                         },
                         icon: const Icon(Icons.close_rounded),
@@ -172,6 +208,21 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
               ),
             ),
           ),
+          if (_tag != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: InputChip(
+                  label: Text(app.t(en: 'Tag filter active', ur: 'ٹیگ فلٹر فعال')),
+                  selected: true,
+                  onDeleted: () {
+                    setState(() => _tag = null);
+                    _load();
+                  },
+                ),
+              ),
+            ),
           SizedBox(
             height: 44,
             child: ListView(
@@ -184,7 +235,10 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                     label: Text(app.t(en: 'All', ur: 'سب')),
                     selected: _category == null,
                     onSelected: (_) {
-                      setState(() => _category = null);
+                      setState(() {
+                        _category = null;
+                        _tag = null;
+                      });
                       _load();
                     },
                   ),
@@ -199,7 +253,10 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                       label: Text(label),
                       selected: _category == id,
                       onSelected: (_) {
-                        setState(() => _category = id);
+                        setState(() {
+                          _category = id;
+                          _tag = null;
+                        });
                         _load();
                       },
                     ),
@@ -213,7 +270,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
             child: RefreshIndicator(
               color: AppColors.emerald,
               onRefresh: _load,
-              child: _loading && _items.isEmpty
+              child: _loading && _items.isEmpty && !hasSuggestions
                   ? const Center(child: CircularProgressIndicator(color: AppColors.emerald))
                   : _error != null
                       ? ListView(children: [
@@ -222,10 +279,83 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                           TextButton(onPressed: _load, child: Text(app.t(en: 'Retry', ur: 'دوبارہ کوشش'))),
                         ])
                       : _items.isEmpty
-                          ? ListView(children: [
-                              const SizedBox(height: 80),
-                              Center(child: Text(app.t(en: 'No results found', ur: 'کوئی نتیجہ نہیں ملا'))),
-                            ])
+                          ? ListView(
+                              padding: const EdgeInsets.fromLTRB(16, 24, 16, 28),
+                              children: [
+                                const SizedBox(height: 24),
+                                Icon(
+                                  Icons.search_off_rounded,
+                                  size: 48,
+                                  color: isDark ? Colors.white38 : AppColors.slate200,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  hasSuggestions
+                                      ? app.t(en: 'No exact matches', ur: 'کوئی عین مطابق نتیجہ نہیں')
+                                      : app.t(en: 'No results found', ur: 'کوئی نتیجہ نہیں ملا'),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                                ),
+                                if (hasSuggestions) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    app.t(
+                                      en: 'Here are related listings based on similar tags.',
+                                      ur: 'مشابہ ٹیگز کی بنیاد پر متعلقہ فہرستیں یہ ہیں۔',
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark ? Colors.white60 : AppColors.slate500,
+                                    ),
+                                  ),
+                                ],
+                                if (_suggestedTags.isNotEmpty) ...[
+                                  const SizedBox(height: 18),
+                                  Text(
+                                    app.t(en: 'Did you mean', ur: 'کیا آپ کا مطلب تھا'),
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: _suggestedTags.map((raw) {
+                                      final t = Map<String, dynamic>.from(raw as Map);
+                                      final label = app.isUrdu
+                                          ? '${t['name_ur'] ?? t['name'] ?? t['name_en'] ?? ''}'
+                                          : '${t['name_en'] ?? t['name'] ?? t['name_ur'] ?? ''}';
+                                      return ActionChip(
+                                        label: Text(label),
+                                        onPressed: () => _applySuggestedTag(t),
+                                        backgroundColor:
+                                            isDark ? AppColors.emerald.withValues(alpha: 0.18) : AppColors.tealSoft,
+                                        side: BorderSide(color: AppColors.emerald.withValues(alpha: 0.35)),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ],
+                                if (_suggestions.isNotEmpty) ...[
+                                  const SizedBox(height: 22),
+                                  Text(
+                                    app.t(en: 'Similar listings', ur: 'مشابہ فہرستیں'),
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ..._suggestions.map((raw) {
+                                    final b = Map<String, dynamic>.from(raw as Map);
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: BusinessCardTile(
+                                        item: b,
+                                        isUrdu: app.isUrdu,
+                                        onTap: () => _openBusiness(b),
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              ],
+                            )
                           : ListView.builder(
                               padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                               itemCount: _items.length + (_page < _totalPages ? 1 : 0),
@@ -248,11 +378,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                                   child: BusinessCardTile(
                                     item: b,
                                     isUrdu: app.isUrdu,
-                                    onTap: () {
-                                      Navigator.of(context).push(MaterialPageRoute(
-                                        builder: (_) => BusinessDetailScreen(idOrSlug: '${b['id'] ?? b['slug'] ?? ''}'),
-                                      ));
-                                    },
+                                    onTap: () => _openBusiness(b),
                                   ),
                                 );
                               },

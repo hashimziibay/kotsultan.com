@@ -14,17 +14,21 @@ class BusinessController extends BaseApiController
 
         $q        = $this->request->getGet('q');
         $category = $this->request->getGet('category');
+        $tag      = $this->request->getGet('tag');
         $page     = max(1, (int) ($this->request->getGet('page') ?? 1));
         $perPage  = min(200, max(1, (int) ($this->request->getGet('per_page') ?? 30)));
 
-        $result = (new BusinessModel())->searchDirectory($q, $category, null, $page, $perPage);
+        $result = (new BusinessModel())->searchDirectory($q, $category, $tag, $page, $perPage);
 
         return $this->jsonOk([
-            'items'       => array_map([$this, 'mapBusinessCard'], $result['businesses']),
-            'total'       => $result['total'],
-            'page'        => $result['page'],
-            'per_page'    => $result['perPage'],
-            'total_pages' => $result['totalPages'],
+            'items'              => array_map([$this, 'mapBusinessCard'], $result['businesses']),
+            'total'              => $result['total'],
+            'page'               => $result['page'],
+            'per_page'           => $result['perPage'],
+            'total_pages'        => $result['totalPages'],
+            'suggestions'        => array_map([$this, 'mapBusinessCard'], $result['suggestions'] ?? []),
+            'suggested_tags'     => $result['suggested_tags'] ?? [],
+            'suggestion_reason'  => $result['suggestion_reason'] ?? null,
         ]);
     }
 

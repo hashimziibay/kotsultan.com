@@ -25,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _fromCache = false;
   String? _error;
   Map<String, dynamic>? _data;
+  List<dynamic> _categories = [];
   int _seenEpoch = -1;
   int _loadSeq = 0;
 
@@ -58,6 +59,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  List<dynamic> _extractCategories(Map<String, dynamic> data) {
+    return List<dynamic>.from(
+      (data['categories'] as List?) ??
+          (data['popular_categories'] as List?) ??
+          const [],
+    );
+  }
+
   Future<void> _load({bool silent = false}) async {
     final seq = ++_loadSeq;
     final showSpinner = !silent && _data == null;
@@ -80,6 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted || seq != _loadSeq) return;
       setState(() {
         _data = res.data;
+        _categories = _extractCategories(res.data);
         _fromCache = res.fromCache;
         _loading = false;
         _error = null;
@@ -132,103 +142,16 @@ class _HomeScreenState extends State<HomeScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      builder: (ctx) {
-        final maxH = MediaQuery.sizeOf(ctx).height * 0.72;
-        return SafeArea(
-          child: SizedBox(
-            height: maxH,
-            child: Column(
-              children: [
-                const SizedBox(height: 10),
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.slate700 : AppColors.slate200,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          app.t(en: 'All categories', ur: 'تمام زمرے'),
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                    itemCount: categories.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, i) {
-                      final c = Map<String, dynamic>.from(categories[i] as Map);
-                      final name = app.isUrdu
-                          ? '${c['name_ur'] ?? c['name'] ?? ''}'
-                          : '${c['name_en'] ?? c['name'] ?? ''}';
-                      final color = _colorFor(i);
-                      return Material(
-                        color: isDark ? AppColors.slate700 : AppColors.slate50,
-                        borderRadius: BorderRadius.circular(12),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () {
-                            Navigator.of(ctx).pop();
-                            _openCategory(c, app);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isDark ? AppColors.slate700 : const Color(0xFFE6EEEA),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 34,
-                                  height: 34,
-                                  decoration: BoxDecoration(
-                                    color: color.withValues(alpha: isDark ? 0.25 : 0.14),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Icon(Icons.grid_view_rounded, size: 18, color: color),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    name,
-                                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  color: isDark ? Colors.white54 : AppColors.slate500,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      builder: (ctx) => _HomeCategorySearchSheet(
+        app: app,
+        isDark: isDark,
+        categories: categories,
+        colorFor: _colorFor,
+        onSelect: (c) {
+          Navigator.of(ctx).pop();
+          _openCategory(c, app);
+        },
+      ),
     );
   }
 
@@ -236,11 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final categories = List<dynamic>.from(
-      (_data?['categories'] as List?) ??
-          (_data?['popular_categories'] as List?) ??
-          const [],
-    );
+    final categories = _categories;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -651,6 +570,218 @@ class _HomeCategoriesBox extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _HomeCategorySearchSheet extends StatefulWidget {
+  const _HomeCategorySearchSheet({
+    required this.app,
+    required this.isDark,
+    required this.categories,
+    required this.colorFor,
+    required this.onSelect,
+  });
+
+  final AppState app;
+  final bool isDark;
+  final List<dynamic> categories;
+  final Color Function(int) colorFor;
+  final ValueChanged<Map<String, dynamic>> onSelect;
+
+  @override
+  State<_HomeCategorySearchSheet> createState() => _HomeCategorySearchSheetState();
+}
+
+class _HomeCategorySearchSheetState extends State<_HomeCategorySearchSheet> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _filtered {
+    final q = _query.trim().toLowerCase();
+    final out = <Map<String, dynamic>>[];
+    for (final raw in widget.categories) {
+      if (raw is! Map) continue;
+      final c = Map<String, dynamic>.from(raw);
+      if (q.isEmpty) {
+        out.add(c);
+        continue;
+      }
+      final en = '${c['name_en'] ?? ''}'.toLowerCase();
+      final ur = '${c['name_ur'] ?? ''}'.toLowerCase();
+      final name = '${c['name'] ?? ''}'.toLowerCase();
+      final slug = '${c['slug'] ?? ''}'.toLowerCase();
+      if (en.contains(q) || ur.contains(q) || name.contains(q) || slug.contains(q)) {
+        out.add(c);
+      }
+    }
+    return out;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final app = widget.app;
+    final isDark = widget.isDark;
+    final filtered = _filtered;
+    final maxH = MediaQuery.sizeOf(context).height * 0.78;
+
+    return SafeArea(
+      child: SizedBox(
+        height: maxH,
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.slate700 : AppColors.slate200,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      app.t(en: 'All categories', ur: 'تمام زمرے'),
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                onChanged: (v) => setState(() => _query = v),
+                decoration: InputDecoration(
+                  hintText: app.t(en: 'Search categories...', ur: 'زمرے تلاش کریں...'),
+                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.emerald),
+                  suffixIcon: _query.isEmpty
+                      ? null
+                      : IconButton(
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() => _query = '');
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                  filled: true,
+                  fillColor: isDark ? AppColors.slate700 : AppColors.slate50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: isDark ? AppColors.slate700 : const Color(0xFFE6EEEA)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: AppColors.emerald, width: 1.4),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  app.t(
+                    en: '${filtered.length} categories',
+                    ur: '${filtered.length} زمرے',
+                  ),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white54 : AppColors.slate500,
+                  ),
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        app.t(en: 'No categories found', ur: 'کوئی زمرہ نہیں ملا'),
+                        style: TextStyle(color: isDark ? Colors.white54 : AppColors.slate500),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, i) {
+                        final c = filtered[i];
+                        final name = app.isUrdu
+                            ? '${c['name_ur'] ?? c['name'] ?? ''}'
+                            : '${c['name_en'] ?? c['name'] ?? ''}';
+                        final color = widget.colorFor(i);
+                        return Material(
+                          color: isDark ? AppColors.slate700 : AppColors.slate50,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => widget.onSelect(c),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isDark ? AppColors.slate700 : const Color(0xFFE6EEEA),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 34,
+                                    height: 34,
+                                    decoration: BoxDecoration(
+                                      color: color.withValues(alpha: isDark ? 0.25 : 0.14),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(Icons.grid_view_rounded, size: 18, color: color),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      name,
+                                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: isDark ? Colors.white54 : AppColors.slate500,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -5,6 +5,7 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\WallModel;
 use App\Models\WallCategoryModel;
+use App\Models\WallAttachmentModel;
 use App\Models\AdminActivityLogModel;
 
 class WallController extends BaseController
@@ -55,6 +56,7 @@ class WallController extends BaseController
             'title'       => lang('App.admin_page_add_wall'),
             'pageHeading' => lang('App.admin_page_create_personality'),
             'person'      => null,
+            'attachments' => [],
             'categories'  => $wallCategoryModel->orderBy('display_order', 'ASC')->findAll(),
         ]);
     }
@@ -95,9 +97,15 @@ class WallController extends BaseController
         ];
 
         $wallModel = new WallModel();
-        $id        = $wallModel->insert($data);
+        $id        = (int) $wallModel->insert($data);
 
-        AdminActivityLogModel::log('Created Wall Entry', 'Wall of Kot Sultan', $id, "Created personality {$data['name_en']}");
+        $uploaded = $this->handleAttachmentsUpload($id);
+        AdminActivityLogModel::log(
+            'Created Wall Entry',
+            'Wall of Kot Sultan',
+            $id,
+            "Created personality {$data['name_en']}" . ($uploaded > 0 ? " (+{$uploaded} attachments)" : '')
+        );
 
         return redirect()->to(base_url('admin/wall-of-kot-sultan'))->with('success', lang('App.admin_msg_personality_created'));
     }
@@ -112,11 +120,13 @@ class WallController extends BaseController
         }
 
         $wallCategoryModel = new WallCategoryModel();
+        $attachmentModel   = new WallAttachmentModel();
 
         return view('admin/wall/form', [
             'title'       => lang('App.admin_page_edit_wall_title', [$id]),
             'pageHeading' => lang('App.admin_page_edit_personality', [($person['name_en'] ?: $person['name_ur'])]),
             'person'      => $person,
+            'attachments' => $attachmentModel->getForWall((int) $id),
             'categories'  => $wallCategoryModel->orderBy('display_order', 'ASC')->findAll(),
         ]);
     }
@@ -166,8 +176,14 @@ class WallController extends BaseController
         ];
 
         $wallModel->update($id, $data);
+        $uploaded = $this->handleAttachmentsUpload((int) $id);
 
-        AdminActivityLogModel::log('Updated Wall Entry', 'Wall of Kot Sultan', $id, "Updated personality {$data['name_en']}");
+        AdminActivityLogModel::log(
+            'Updated Wall Entry',
+            'Wall of Kot Sultan',
+            $id,
+            "Updated personality {$data['name_en']}" . ($uploaded > 0 ? " (+{$uploaded} attachments)" : '')
+        );
 
         return redirect()->to(base_url('admin/wall-of-kot-sultan'))->with('success', lang('App.admin_msg_personality_updated'));
     }
@@ -178,6 +194,7 @@ class WallController extends BaseController
         $person    = $wallModel->find($id);
 
         if ($person) {
+            $this->deleteAllAttachments((int) $id);
             $wallModel->delete($id);
             AdminActivityLogModel::log('Deleted Wall Entry', 'Wall of Kot Sultan', $id, "Deleted personality {$person['name_en']}");
             return redirect()->to(base_url('admin/wall-of-kot-sultan'))->with('success', lang('App.admin_msg_personality_deleted'));
@@ -201,14 +218,121 @@ class WallController extends BaseController
         return redirect()->back()->with('error', lang('App.admin_msg_entry_not_found'));
     }
 
+    public function deleteAttachment($id, $attachmentId)
+    {
+        $wallModel       = new WallModel();
+        $attachmentModel = new WallAttachmentModel();
+        $person          = $wallModel->find($id);
+        $attachment      = $attachmentModel->find($attachmentId);
+
+        if (!$person || !$attachment || (int) $attachment['wall_id'] !== (int) $id) {
+            return redirect()->back()->with('error', lang('App.admin_msg_entry_not_found'));
+        }
+
+        $this->deleteAttachmentFile($attachment);
+        $attachmentModel->delete($attachmentId);
+
+        AdminActivityLogModel::log('Deleted Wall Attachment', 'Wall of Kot Sultan', $id, 'Removed attachment #' . $attachmentId);
+
+        return redirect()->back()->with('success', lang('App.admin_attachment_deleted') ?? 'Attachment deleted.');
+    }
+
     private function handlePhotoUpload(): ?string
     {
         $file = $this->request->getFile('photo');
         if ($file && $file->isValid() && !$file->hasMoved()) {
+            $dir = FCPATH . 'uploads/wall';
+            if (! is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
             $newName = $file->getRandomName();
-            $file->move(FCPATH . 'uploads/wall', $newName);
+            $file->move($dir, $newName);
             return 'uploads/wall/' . $newName;
         }
         return null;
+    }
+
+    private function handleAttachmentsUpload(int $wallId): int
+    {
+        $files = $this->request->getFileMultiple('attachments');
+        if ($files === null) {
+            $single = $this->request->getFile('attachments');
+            $files  = ($single && $single->isValid()) ? [$single] : [];
+        }
+
+        if ($files === []) {
+            return 0;
+        }
+
+        $dir = FCPATH . 'uploads/wall/attachments';
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $model   = new WallAttachmentModel();
+        $allowed = WallAttachmentModel::allowedExtensions();
+        $count   = 0;
+        $order   = (int) $model->where('wall_id', $wallId)->countAllResults();
+
+        foreach ($files as $file) {
+            if (! $file || ! $file->isValid() || $file->hasMoved()) {
+                continue;
+            }
+
+            $ext = strtolower($file->getClientExtension() ?: $file->guessExtension() ?: '');
+            if (! in_array($ext, $allowed, true)) {
+                continue;
+            }
+
+            $size = (int) $file->getSize();
+            // ~12MB soft limit per file
+            if ($size > 12 * 1024 * 1024) {
+                continue;
+            }
+
+            $originalName = $file->getClientName();
+            $mimeType     = $file->getClientMimeType();
+            $newName      = $file->getRandomName();
+            $file->move($dir, $newName);
+            $relative = 'uploads/wall/attachments/' . $newName;
+
+            $model->insert([
+                'wall_id'       => $wallId,
+                'file_path'     => $relative,
+                'original_name' => $originalName,
+                'mime_type'     => $mimeType,
+                'file_type'     => WallAttachmentModel::classifyExtension($ext),
+                'file_size'     => $size,
+                'display_order' => $order++,
+            ]);
+            $count++;
+        }
+
+        return $count;
+    }
+
+    private function deleteAllAttachments(int $wallId): void
+    {
+        $model = new WallAttachmentModel();
+        $rows  = $model->where('wall_id', $wallId)->findAll();
+        foreach ($rows as $row) {
+            $this->deleteAttachmentFile($row);
+            $model->delete($row['id']);
+        }
+    }
+
+    private function deleteAttachmentFile(array $attachment): void
+    {
+        $path = trim((string) ($attachment['file_path'] ?? ''));
+        if ($path === '') {
+            return;
+        }
+        $full = FCPATH . ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR);
+        // Only delete under uploads/wall
+        $uploadsRoot = realpath(FCPATH . 'uploads/wall');
+        $realFile    = realpath($full);
+        if ($uploadsRoot && $realFile && str_starts_with($realFile, $uploadsRoot) && is_file($realFile)) {
+            @unlink($realFile);
+        }
     }
 }

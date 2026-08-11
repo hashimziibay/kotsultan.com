@@ -216,15 +216,56 @@
 
                 <!-- Directory Grid Results -->
                 <?php if (empty($businesses)): ?>
+                    <?php
+                        $suggestions   = $suggestions ?? [];
+                        $suggestedTags = $suggestedTags ?? [];
+                        $hasSuggestions = ! empty($suggestions) || ! empty($suggestedTags);
+                    ?>
                     <div class="bg-white dark:bg-slate-800 rounded-2xl p-12 text-center border border-slate-200 dark:border-slate-700 my-8">
                         <i data-lucide="search-x" class="w-12 h-12 text-slate-400 mx-auto mb-3"></i>
-                        <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1"><?= lang('App.no_results') ?></h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-6"><?= lang('App.no_results_sub') ?></p>
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">
+                            <?= $hasSuggestions ? lang('App.no_exact_matches') : lang('App.no_results') ?>
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">
+                            <?= $hasSuggestions ? lang('App.suggestions_from_tags') : lang('App.no_results_sub') ?>
+                        </p>
+                        <?php if (! empty($suggestedTags)): ?>
+                            <div class="mb-6">
+                                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3"><?= lang('App.did_you_mean') ?></p>
+                                <div class="flex flex-wrap justify-center gap-2">
+                                    <?php foreach ($suggestedTags as $tag): ?>
+                                        <?php
+                                            $tagLabel = $isUrdu
+                                                ? (($tag['name_ur'] ?? '') !== '' ? $tag['name_ur'] : ($tag['name'] ?? $tag['name_en'] ?? ''))
+                                                : (($tag['name_en'] ?? '') !== '' ? $tag['name_en'] : ($tag['name'] ?? $tag['name_ur'] ?? ''));
+                                            $tagUrl = base_url('directory?' . http_build_query(array_filter([
+                                                'tag' => $tag['id'] ?? null,
+                                            ])));
+                                        ?>
+                                        <a href="<?= esc($tagUrl) ?>"
+                                           class="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors">
+                                            <?= esc($tagLabel) ?>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                         <a href="<?= base_url('directory') ?>" class="btn btn-md btn-primary">
                             <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                             <span><?= lang('App.reset_filter') ?></span>
                         </a>
                     </div>
+
+                    <?php if (! empty($suggestions)): ?>
+                        <div class="mb-4 px-1">
+                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white"><?= lang('App.similar_listings') ?></h3>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+                            <?php foreach ($suggestions as $item): ?>
+                                <?= view('components/business_card', ['item' => $item, 'isUrdu' => $isUrdu]) ?>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 <?php else: ?>
                     <?php 
                         $totalResults = $totalResults ?? count($businesses);

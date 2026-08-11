@@ -127,6 +127,49 @@
         </div>
         <?php endif; ?>
 
+        <?php $attachments = $attachments ?? []; ?>
+        <?php if (!empty($attachments)): ?>
+        <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8 shadow-xs">
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700/80 pb-3">
+                <i data-lucide="paperclip" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></i>
+                <span><?= lang('App.attachments') ?></span>
+            </h2>
+
+            <?php
+                $images = array_values(array_filter($attachments, static fn ($a) => ($a['file_type'] ?? '') === 'image'));
+                $docs   = array_values(array_filter($attachments, static fn ($a) => ($a['file_type'] ?? '') !== 'image'));
+            ?>
+
+            <?php if (!empty($images)): ?>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6">
+                <?php foreach ($images as $img): ?>
+                    <a href="<?= esc($img['url']) ?>" target="_blank" rel="noopener" class="group block rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 aspect-square">
+                        <img src="<?= esc($img['url']) ?>" alt="<?= esc($img['original_name'] ?? '') ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                    </a>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($docs)): ?>
+            <div class="space-y-2">
+                <?php foreach ($docs as $doc): ?>
+                    <a href="<?= esc($doc['url']) ?>" target="_blank" rel="noopener"
+                       class="flex items-center gap-3 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
+                        <span class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-[10px] font-extrabold uppercase">
+                            <?= esc($doc['file_type'] ?? 'file') ?>
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-bold text-slate-900 dark:text-white truncate"><?= esc($doc['original_name'] ?? 'File') ?></span>
+                            <span class="block text-[11px] text-slate-500"><?= number_format(((int) ($doc['file_size'] ?? 0)) / 1024, 1) ?> KB</span>
+                        </span>
+                        <i data-lucide="download" class="w-4 h-4 text-slate-400"></i>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
         <!-- Related Personalities Section -->
         <?php if (!empty($related)): ?>
         <div class="pt-6 border-t border-slate-200 dark:border-slate-800">

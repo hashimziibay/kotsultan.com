@@ -30,6 +30,17 @@ class CatalogRepository {
     try {
       final res = await api.get('home');
       final data = Map<String, dynamic>.from(res['data'] as Map);
+
+      // Older live /home builds only return 8 popular categories; merge full list.
+      try {
+        final cats = await getCategories();
+        if (cats.data.length >
+            List.from((data['popular_categories'] as List?) ?? const []).length) {
+          data['categories'] = cats.data;
+          data['popular_categories'] = cats.data;
+        }
+      } catch (_) {}
+
       await cache.putJson(_homeKey, data);
       // Background catalog refresh is owned by AppState — avoid nested refreshes here.
       return CatalogResult(data);
@@ -56,6 +67,7 @@ class CatalogRepository {
   Future<CatalogResult<Map<String, dynamic>>> getBusinesses({
     String? q,
     String? category,
+    String? tag,
     int page = 1,
     int perPage = 20,
   }) async {
@@ -65,11 +77,13 @@ class CatalogRepository {
         'per_page': '$perPage',
         if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
         if (category != null && category.isNotEmpty) 'category': category,
+        if (tag != null && tag.isNotEmpty) 'tag': tag,
       };
       final res = await api.get('businesses', query: query);
       final data = Map<String, dynamic>.from(res['data'] as Map);
       final items = List<dynamic>.from((data['items'] as List?) ?? const []);
-      await _mergeBusinesses(items);
+      final suggestions = List<dynamic>.from((data['suggestions'] as List?) ?? const []);
+      await _mergeBusinesses([...items, ...suggestions]);
       unawaited(prefetchCatalog());
       return CatalogResult(data);
     } catch (e) {
@@ -79,7 +93,11 @@ class CatalogRepository {
         page: page,
         perPage: perPage,
       );
-      if (offline != null) return CatalogResult(offline, fromCache: true);
+      if (offline != null) {
+        offline['suggestions'] = const [];
+        offline['suggested_tags'] = const [];
+        return CatalogResult(offline, fromCache: true);
+      }
       rethrow;
     }
   }
@@ -214,6 +232,15 @@ class CatalogRepository {
     try {
       final res = await api.get('home');
       final data = Map<String, dynamic>.from(res['data'] as Map);
+      try {
+        final catsRes = await api.get('categories');
+        final cats = List<dynamic>.from((catsRes['data'] as List?) ?? const []);
+        if (cats.length >
+            List.from((data['popular_categories'] as List?) ?? const []).length) {
+          data['categories'] = cats;
+          data['popular_categories'] = cats;
+        }
+      } catch (_) {}
       await cache.putJson(_homeKey, data);
       return true;
     } catch (_) {
