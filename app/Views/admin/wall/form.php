@@ -134,31 +134,47 @@
             <div class="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <h4 class="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider"><?= lang('App.admin_external_links') ?></h4>
-                        <p class="text-[11px] text-slate-500 mt-1"><?= lang('App.admin_external_links_hint') ?></p>
+                        <h4 class="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider"><?= lang('App.admin_social_links') ?></h4>
+                        <p class="text-[11px] text-slate-500 mt-1"><?= lang('App.admin_social_links_hint') ?></p>
                     </div>
                     <button type="button" id="add-link-row" class="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800">
-                        + <?= lang('App.admin_add_link') ?>
+                        + <?= lang('App.admin_add_social_link') ?>
                     </button>
                 </div>
 
                 <?php
+                    $socialPlatforms = \App\Models\WallModel::socialPlatforms();
                     $externalLinks = \App\Models\WallModel::decodeExternalLinks(
                         isset($person['external_links']) ? (string) $person['external_links'] : null
                     );
                     if ($externalLinks === []) {
-                        $externalLinks = [['title' => '', 'url' => '']];
+                        $externalLinks = [['platform' => '', 'title' => '', 'url' => '']];
                     }
                 ?>
                 <div id="link-rows" class="space-y-2">
                     <?php foreach ($externalLinks as $link): ?>
-                    <div class="link-row grid grid-cols-1 sm:grid-cols-[1fr_1.4fr_auto] gap-2">
-                        <input type="text" name="link_title[]" value="<?= esc($link['title'] ?? '') ?>"
-                               placeholder="<?= esc(lang('App.admin_link_title_placeholder')) ?>"
-                               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                    <div class="link-row grid grid-cols-1 sm:grid-cols-[minmax(9rem,0.9fr)_1.2fr_1fr_auto] gap-2">
+                        <select name="link_platform[]"
+                                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                            <option value=""><?= esc(lang('App.admin_select_platform')) ?></option>
+                            <?php foreach ($socialPlatforms as $key => $meta): ?>
+                                <option value="<?= esc($key) ?>" <?= (($link['platform'] ?? '') === $key) ? 'selected' : '' ?>>
+                                    <?= esc($meta['label']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                         <input type="text" name="link_url[]" value="<?= esc($link['url'] ?? '') ?>"
-                               placeholder="https://example.com"
+                               placeholder="https://..."
                                inputmode="url" autocomplete="url"
+                               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                        <?php
+                            $storedTitle = (string) ($link['title'] ?? '');
+                            $platformLabel = (string) ($link['label'] ?? '');
+                            $showCustomTitle = (($link['platform'] ?? '') === 'other')
+                                || ($storedTitle !== '' && $storedTitle !== $platformLabel);
+                        ?>
+                        <input type="text" name="link_title[]" value="<?= esc($showCustomTitle ? $storedTitle : '') ?>"
+                               placeholder="<?= esc(lang('App.admin_link_label_placeholder')) ?>"
                                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
                         <button type="button" class="remove-link-row px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold border border-transparent hover:border-rose-200">
                             <?= lang('App.admin_remove') ?>
@@ -251,7 +267,19 @@
   const linksBox = document.getElementById('link-rows');
   const addLinkBtn = document.getElementById('add-link-row');
   const removeLabel = <?= json_encode(lang('App.admin_remove')) ?>;
-  const titlePlaceholder = <?= json_encode(lang('App.admin_link_title_placeholder')) ?>;
+  const labelPlaceholder = <?= json_encode(lang('App.admin_link_label_placeholder')) ?>;
+  const selectPlatformLabel = <?= json_encode(lang('App.admin_select_platform')) ?>;
+  const platforms = <?= json_encode($socialPlatforms, JSON_UNESCAPED_UNICODE) ?>;
+
+  function platformOptionsHtml(selected) {
+    let html = `<option value="">${selectPlatformLabel.replace(/</g, '&lt;')}</option>`;
+    Object.keys(platforms).forEach((key) => {
+      const label = platforms[key].label || key;
+      const sel = selected === key ? ' selected' : '';
+      html += `<option value="${key}"${sel}>${label.replace(/</g, '&lt;')}</option>`;
+    });
+    return html;
+  }
 
   function bindRemove(btn) {
     btn.addEventListener('click', () => {
@@ -261,6 +289,8 @@
         const row = rows[0];
         if (!row) return;
         row.querySelectorAll('input').forEach((el) => { el.value = ''; });
+        const sel = row.querySelector('select');
+        if (sel) sel.selectedIndex = 0;
         return;
       }
       btn.closest('.link-row')?.remove();
@@ -274,12 +304,16 @@
   if (addLinkBtn && linksBox) {
     addLinkBtn.addEventListener('click', () => {
       const row = document.createElement('div');
-      row.className = 'link-row grid grid-cols-1 sm:grid-cols-[1fr_1.4fr_auto] gap-2';
+      row.className = 'link-row grid grid-cols-1 sm:grid-cols-[minmax(9rem,0.9fr)_1.2fr_1fr_auto] gap-2';
       row.innerHTML = `
-        <input type="text" name="link_title[]" value="" placeholder="${titlePlaceholder.replace(/"/g, '&quot;')}"
-               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
-        <input type="text" name="link_url[]" value="" placeholder="https://example.com"
+        <select name="link_platform[]"
+                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+          ${platformOptionsHtml('')}
+        </select>
+        <input type="text" name="link_url[]" value="" placeholder="https://..."
                inputmode="url" autocomplete="url"
+               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+        <input type="text" name="link_title[]" value="" placeholder="${labelPlaceholder.replace(/"/g, '&quot;')}"
                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
         <button type="button" class="remove-link-row px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold border border-transparent hover:border-rose-200">${removeLabel}</button>
       `;

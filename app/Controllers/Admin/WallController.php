@@ -406,23 +406,29 @@ class WallController extends BaseController
             return;
         }
         $data['external_links'] = $this->encodeExternalLinks(
+            $this->request->getPost('link_platform'),
             $this->request->getPost('link_url'),
             $this->request->getPost('link_title')
         );
     }
 
     /**
+     * @param mixed $platforms
      * @param mixed $urls
      * @param mixed $titles
      */
-    private function encodeExternalLinks($urls, $titles): ?string
+    private function encodeExternalLinks($platforms, $urls, $titles): ?string
     {
-        $urls   = is_array($urls) ? array_values($urls) : [];
-        $titles = is_array($titles) ? array_values($titles) : [];
-        $links  = [];
+        $platforms = is_array($platforms) ? array_values($platforms) : [];
+        $urls      = is_array($urls) ? array_values($urls) : [];
+        $titles    = is_array($titles) ? array_values($titles) : [];
+        $catalog   = WallModel::socialPlatforms();
+        $links     = [];
 
-        foreach ($urls as $i => $rawUrl) {
-            $url = trim((string) $rawUrl);
+        // Prefer URL rows as the driver (platform/title may be shorter).
+        $count = max(count($urls), count($platforms), count($titles));
+        for ($i = 0; $i < $count; $i++) {
+            $url = trim((string) ($urls[$i] ?? ''));
             $url = preg_replace('/\s+/', '', $url) ?? $url;
             if ($url === '') {
                 continue;
@@ -430,14 +436,25 @@ class WallController extends BaseController
             if (! preg_match('#^https?://#i', $url)) {
                 $url = 'https://' . ltrim($url, '/');
             }
-            // Keep social / query / unicode URLs that FILTER_VALIDATE_URL often rejects.
             if (! preg_match('#^https?://[^\s<>"\']{3,}$#iu', $url)) {
                 continue;
             }
+
+            $rawPlatform = trim((string) ($platforms[$i] ?? ''));
+            $platform    = $rawPlatform === ''
+                ? WallModel::inferPlatformFromUrl($url)
+                : WallModel::normalizePlatform($rawPlatform);
+
+            $meta  = $catalog[$platform] ?? $catalog['other'];
             $title = trim((string) ($titles[$i] ?? ''));
+            if ($title === '') {
+                $title = $meta['label'];
+            }
+
             $links[] = [
-                'url'   => $url,
-                'title' => $title !== '' ? $title : $url,
+                'platform' => $platform,
+                'url'      => $url,
+                'title'    => $title,
             ];
         }
 
@@ -445,11 +462,11 @@ class WallController extends BaseController
     }
 
     /**
-     * @return list<array{url:string,title:string}>
+     * @return list<array{url:string,title:string,platform?:string,icon?:string,label?:string}>
      */
     public static function decodeExternalLinks(?string $json): array
     {
-        return \App\Models\WallModel::decodeExternalLinks($json);
+        return WallModel::decodeExternalLinks($json);
     }
 
     private function deleteAttachmentFile(array $attachment): void

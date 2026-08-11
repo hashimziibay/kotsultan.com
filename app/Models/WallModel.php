@@ -238,7 +238,43 @@ class WallModel extends Model
     }
 
     /**
-     * @return list<array{url:string,title:string}>
+     * Supported social / profile platforms for wall personalities.
+     * Admin can pick any of these dynamically per link; "other" allows a custom label.
+     *
+     * @return array<string, array{label:string,icon:string}>
+     */
+    public static function socialPlatforms(): array
+    {
+        return [
+            'facebook'  => ['label' => 'Facebook',  'icon' => 'facebook'],
+            'instagram' => ['label' => 'Instagram', 'icon' => 'instagram'],
+            'x'         => ['label' => 'X (Twitter)', 'icon' => 'twitter'],
+            'youtube'   => ['label' => 'YouTube',   'icon' => 'youtube'],
+            'linkedin'  => ['label' => 'LinkedIn',  'icon' => 'linkedin'],
+            'tiktok'    => ['label' => 'TikTok',    'icon' => 'music-2'],
+            'whatsapp'  => ['label' => 'WhatsApp',  'icon' => 'message-circle'],
+            'telegram'  => ['label' => 'Telegram',  'icon' => 'send'],
+            'threads'   => ['label' => 'Threads',   'icon' => 'at-sign'],
+            'snapchat'  => ['label' => 'Snapchat',  'icon' => 'ghost'],
+            'pinterest' => ['label' => 'Pinterest', 'icon' => 'pin'],
+            'github'    => ['label' => 'GitHub',    'icon' => 'github'],
+            'website'   => ['label' => 'Website',   'icon' => 'globe'],
+            'other'     => ['label' => 'Other / Custom', 'icon' => 'link-2'],
+        ];
+    }
+
+    public static function normalizePlatform(?string $platform): string
+    {
+        $key = strtolower(trim((string) $platform));
+        if ($key === 'twitter') {
+            $key = 'x';
+        }
+        $platforms = self::socialPlatforms();
+        return isset($platforms[$key]) ? $key : 'other';
+    }
+
+    /**
+     * @return list<array{url:string,title:string,platform:string,icon:string,label:string}>
      */
     public static function decodeExternalLinks(?string $json): array
     {
@@ -249,6 +285,7 @@ class WallModel extends Model
         if (! is_array($decoded)) {
             return [];
         }
+        $platforms = self::socialPlatforms();
         $out = [];
         foreach ($decoded as $row) {
             if (is_string($row)) {
@@ -256,7 +293,14 @@ class WallModel extends Model
                 if ($url === '') {
                     continue;
                 }
-                $out[] = ['url' => $url, 'title' => $url];
+                $meta = $platforms['website'];
+                $out[] = [
+                    'url'      => $url,
+                    'title'    => $meta['label'],
+                    'platform' => 'website',
+                    'icon'     => $meta['icon'],
+                    'label'    => $meta['label'],
+                ];
                 continue;
             }
             if (! is_array($row)) {
@@ -266,12 +310,58 @@ class WallModel extends Model
             if ($url === '') {
                 continue;
             }
-            $title = trim((string) ($row['title'] ?? $row['name'] ?? $url));
+            $platform = self::normalizePlatform((string) ($row['platform'] ?? ''));
+            // Infer platform from URL when older rows have no platform.
+            if ($platform === 'other' && empty($row['platform'])) {
+                $platform = self::inferPlatformFromUrl($url);
+            }
+            $meta  = $platforms[$platform] ?? $platforms['other'];
+            $title = trim((string) ($row['title'] ?? $row['name'] ?? ''));
+            if ($title === '') {
+                $title = $meta['label'];
+            }
             $out[] = [
-                'url'   => $url,
-                'title' => $title !== '' ? $title : $url,
+                'url'      => $url,
+                'title'    => $title,
+                'platform' => $platform,
+                'icon'     => $meta['icon'],
+                'label'    => $meta['label'],
             ];
         }
         return $out;
+    }
+
+    public static function inferPlatformFromUrl(string $url): string
+    {
+        $host = strtolower((string) (parse_url($url, PHP_URL_HOST) ?? ''));
+        $host = preg_replace('/^www\./', '', $host) ?? $host;
+        $map  = [
+            'facebook.com' => 'facebook',
+            'fb.com'       => 'facebook',
+            'fb.me'        => 'facebook',
+            'instagram.com'=> 'instagram',
+            'twitter.com'  => 'x',
+            'x.com'        => 'x',
+            'youtube.com'  => 'youtube',
+            'youtu.be'     => 'youtube',
+            'linkedin.com' => 'linkedin',
+            'tiktok.com'   => 'tiktok',
+            'wa.me'        => 'whatsapp',
+            'whatsapp.com' => 'whatsapp',
+            'api.whatsapp.com' => 'whatsapp',
+            't.me'         => 'telegram',
+            'telegram.me'  => 'telegram',
+            'threads.net'  => 'threads',
+            'snapchat.com' => 'snapchat',
+            'pinterest.com'=> 'pinterest',
+            'pin.it'       => 'pinterest',
+            'github.com'   => 'github',
+        ];
+        foreach ($map as $domain => $platform) {
+            if ($host === $domain || str_ends_with($host, '.' . $domain)) {
+                return $platform;
+            }
+        }
+        return 'website';
     }
 }

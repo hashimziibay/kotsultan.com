@@ -78,17 +78,58 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
       if (item is String) {
         final url = item.trim();
         if (url.isEmpty) continue;
-        out.add({'url': url, 'title': url});
+        out.add({'url': url, 'title': 'Website', 'platform': 'website', 'label': 'Website'});
         continue;
       }
       if (item is! Map) continue;
       final m = Map<String, dynamic>.from(item);
       final url = '${m['url'] ?? m['link'] ?? ''}'.trim();
       if (url.isEmpty) continue;
-      final title = '${m['title'] ?? m['name'] ?? url}'.trim();
-      out.add({'url': url, 'title': title.isEmpty ? url : title});
+      final platform = '${m['platform'] ?? ''}'.trim().toLowerCase();
+      final label = '${m['label'] ?? ''}'.trim();
+      final title = '${m['title'] ?? m['name'] ?? label}'.trim();
+      out.add({
+        'url': url,
+        'title': title.isEmpty ? (label.isEmpty ? url : label) : title,
+        'platform': platform.isEmpty ? 'other' : platform,
+        'label': label.isEmpty ? title : label,
+      });
     }
     return out;
+  }
+
+  IconData _platformIcon(String platform) {
+    switch (platform) {
+      case 'facebook':
+        return Icons.facebook_rounded;
+      case 'instagram':
+        return Icons.camera_alt_rounded;
+      case 'x':
+      case 'twitter':
+        return Icons.alternate_email_rounded;
+      case 'youtube':
+        return Icons.play_circle_fill_rounded;
+      case 'linkedin':
+        return Icons.business_center_rounded;
+      case 'tiktok':
+        return Icons.music_note_rounded;
+      case 'whatsapp':
+        return Icons.chat_rounded;
+      case 'telegram':
+        return Icons.send_rounded;
+      case 'threads':
+        return Icons.forum_rounded;
+      case 'snapchat':
+        return Icons.flash_on_rounded;
+      case 'pinterest':
+        return Icons.push_pin_rounded;
+      case 'github':
+        return Icons.code_rounded;
+      case 'website':
+        return Icons.language_rounded;
+      default:
+        return Icons.link_rounded;
+    }
   }
 
   Future<void> _openUrl(String url) async {
@@ -187,13 +228,14 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
                     if (links.isNotEmpty) ...[
                       const SizedBox(height: 22),
                       Text(
-                        app.t(en: 'Links', ur: 'لنکس'),
+                        app.t(en: 'Social Links', ur: 'سوشل لنکس'),
                         style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                       ),
                       const SizedBox(height: 10),
                       ...links.map((link) {
                         final url = '${link['url'] ?? ''}'.trim();
-                        final title = '${link['title'] ?? url}'.trim();
+                        final platform = '${link['platform'] ?? 'other'}'.trim().toLowerCase();
+                        final title = '${link['title'] ?? link['label'] ?? url}'.trim();
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Material(
@@ -219,7 +261,7 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
                                         color: AppColors.emerald.withValues(alpha: isDark ? 0.22 : 0.12),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: const Icon(Icons.link_rounded, color: AppColors.emeraldDark, size: 20),
+                                      child: Icon(_platformIcon(platform), color: AppColors.emeraldDark, size: 20),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(

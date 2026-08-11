@@ -135,8 +135,8 @@
         <?php if (!empty($externalLinks)): ?>
         <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8 shadow-xs">
             <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700/80 pb-3">
-                <i data-lucide="link-2" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></i>
-                <span><?= lang('App.external_links') ?></span>
+                <i data-lucide="share-2" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></i>
+                <span><?= lang('App.social_links') ?></span>
             </h2>
             <ul class="space-y-2 list-none m-0 p-0">
                 <?php foreach ($externalLinks as $link): ?>
@@ -144,12 +144,13 @@
                         <a href="<?= esc($link['url']) ?>" target="_blank" rel="noopener"
                            class="flex items-center gap-3 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
                             <span class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                                <i data-lucide="<?= esc($link['icon'] ?? 'link-2') ?>" class="w-4 h-4"></i>
                             </span>
                             <span class="min-w-0 flex-1">
-                                <span class="block text-sm font-bold text-slate-900 dark:text-white break-words"><?= esc($link['title']) ?></span>
+                                <span class="block text-sm font-bold text-slate-900 dark:text-white break-words"><?= esc($link['title'] ?: ($link['label'] ?? 'Link')) ?></span>
                                 <span class="block text-[11px] text-slate-500 break-all"><?= esc($link['url']) ?></span>
                             </span>
+                            <i data-lucide="external-link" class="w-4 h-4 text-slate-400 shrink-0"></i>
                         </a>
                     </li>
                 <?php endforeach; ?>
