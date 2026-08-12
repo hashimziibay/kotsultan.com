@@ -127,6 +127,12 @@
                         <span><?= lang('App.admin_wall') ?></span>
                     </a>
 
+                    <a href="<?= base_url('admin/wall-categories') ?>"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors <?= $currentSegment === 'wall-categories' ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white' ?>">
+                        <i data-lucide="tags" class="w-4 h-4"></i>
+                        <span><?= lang('App.admin_wall_categories_nav') ?></span>
+                    </a>
+
                     <a href="<?= base_url('admin/emergency-numbers') ?>" 
                        class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors <?= $currentSegment === 'emergency-numbers' ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white' ?>">
                         <i data-lucide="phone-call" class="w-4 h-4"></i>

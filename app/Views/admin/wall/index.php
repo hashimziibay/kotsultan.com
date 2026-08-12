@@ -7,10 +7,16 @@
         <h2 class="text-xl font-extrabold text-slate-900 dark:text-white"><?= lang('App.admin_wall') ?></h2>
         <p class="text-xs text-slate-500 mt-1"><?= lang('App.admin_wall_sub') ?> (<?= lang('App.admin_total') ?>: <?= count($personalities) ?>)</p>
     </div>
-    <a href="<?= base_url('admin/wall-of-kot-sultan/create') ?>" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2">
-        <i data-lucide="plus-circle" class="w-4 h-4"></i>
-        <span><?= lang('App.admin_add_personality') ?></span>
-    </a>
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="<?= base_url('admin/wall-categories') ?>" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+            <i data-lucide="tags" class="w-4 h-4"></i>
+            <span><?= lang('App.admin_wall_categories_nav') ?></span>
+        </a>
+        <a href="<?= base_url('admin/wall-of-kot-sultan/create') ?>" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span><?= lang('App.admin_add_personality') ?></span>
+        </a>
+    </div>
 </div>
 
 <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">

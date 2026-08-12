@@ -108,6 +108,15 @@ $routes->group('admin', ['filter' => 'adminAuth'], static function ($routes) {
     $routes->post('wall-of-kot-sultan/toggle/(:num)', 'Admin\WallController::toggle/$1');
     $routes->post('wall-of-kot-sultan/(:num)/attachment/(:num)/delete', 'Admin\WallController::deleteAttachment/$1/$2');
 
+    // Wall personality categories
+    $routes->get('wall-categories', 'Admin\WallCategoryController::index');
+    $routes->get('wall-categories/create', 'Admin\WallCategoryController::create');
+    $routes->post('wall-categories/create', 'Admin\WallCategoryController::store');
+    $routes->get('wall-categories/edit/(:num)', 'Admin\WallCategoryController::edit/$1');
+    $routes->post('wall-categories/edit/(:num)', 'Admin\WallCategoryController::update/$1');
+    $routes->post('wall-categories/delete/(:num)', 'Admin\WallCategoryController::delete/$1');
+    $routes->post('wall-categories/toggle/(:num)', 'Admin\WallCategoryController::toggle/$1');
+
     // Emergency Numbers
     $routes->get('emergency-numbers', 'Admin\EmergencyController::index');
     $routes->get('emergency-numbers/create', 'Admin\EmergencyController::create');
