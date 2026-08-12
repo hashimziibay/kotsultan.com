@@ -5,7 +5,10 @@
 <?php
     $isUrdu = ($lang === 'ur');
     $isBusiness = (($user['account_type'] ?? 'user') === 'business');
-    $tab = ($currentTab ?? 'profile') === 'business' ? 'business' : 'profile';
+    $tab = ($currentTab ?? 'profile');
+    if (! in_array($tab, ['profile', 'business', 'upgrade'], true)) {
+        $tab = 'profile';
+    }
 ?>
 
 <div class="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 transition-colors duration-200 pt-24" x-data="{ currentTab: '<?= esc($tab) ?>' }">
@@ -46,6 +49,13 @@
                                 class="w-full btn btn-sm justify-start">
                             <i data-lucide="store" class="w-4 h-4"></i>
                             <span><?= lang('App.dashboard_my_business_listing') ?></span>
+                        </button>
+                        <?php else: ?>
+                        <button type="button" @click="currentTab = 'upgrade'"
+                                :class="currentTab === 'upgrade' ? 'btn-primary' : 'btn-ghost'"
+                                class="w-full btn btn-sm justify-start">
+                            <i data-lucide="store" class="w-4 h-4"></i>
+                            <span><?= lang('App.switch_to_business') ?></span>
                         </button>
                         <?php endif; ?>
                     </nav>
@@ -88,6 +98,37 @@
                         </div>
                     </form>
                 </div>
+
+                <?php if (! $isBusiness): ?>
+                <div x-show="currentTab === 'upgrade'" x-cloak class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-xs">
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-1"><?= lang('App.switch_to_business') ?></h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-2"><?= lang('App.switch_to_business_hint') ?></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-6"><?= lang('App.one_business_per_account') ?></p>
+
+                    <form action="<?= base_url('dashboard/upgrade-business') ?>" method="POST" class="space-y-4 max-w-xl text-xs">
+                        <?= csrf_field() ?>
+                        <div>
+                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1"><?= lang('App.phone_label') ?></label>
+                            <input type="text" value="<?= esc($user['phone']) ?>" disabled
+                                   class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900/60 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 outline-none">
+                            <p class="mt-1 text-[10px] text-slate-400"><?= lang('App.business_phone_locked_hint') ?></p>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1"><?= lang('App.password') ?> *</label>
+                            <input type="password" name="password" required minlength="6" placeholder="••••••••"
+                                   class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1"><?= lang('App.confirm_password') ?> *</label>
+                            <input type="password" name="password_confirm" required minlength="6" placeholder="••••••••"
+                                   class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white outline-none">
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="btn btn-md btn-primary"><?= lang('App.switch_to_business_cta') ?></button>
+                        </div>
+                    </form>
+                </div>
+                <?php endif; ?>
 
                 <?php if ($isBusiness): ?>
                 <div x-show="currentTab === 'business'" x-cloak class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-xs">

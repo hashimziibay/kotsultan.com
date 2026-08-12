@@ -283,9 +283,14 @@ class AccountController extends BaseController
         }
 
         $tab = $this->request->getGet('tab');
-        if ($tab !== 'profile' && $tab !== 'business') {
-            // Business accounts land on My Business by default
+        if (! in_array($tab, ['profile', 'business', 'upgrade'], true)) {
             $tab = (($user['account_type'] ?? 'user') === 'business') ? 'business' : 'profile';
+        }
+        if ($tab === 'business' && ($user['account_type'] ?? 'user') !== 'business') {
+            $tab = 'upgrade';
+        }
+        if ($tab === 'upgrade' && ($user['account_type'] ?? 'user') === 'business') {
+            $tab = 'business';
         }
         $businesses = [];
         if (($user['account_type'] ?? 'user') === 'business') {
@@ -335,9 +340,10 @@ class AccountController extends BaseController
             if (strlen($password) < 6) {
                 return redirect()->back()->with('error', lang('App.password_min') ?: 'Password must be at least 6 characters');
             }
-            $data['password_hash'] = $model->hashPassword($password);
-            if (($user['account_type'] ?? 'user') !== 'business') {
-                $data['account_type'] = 'business';
+            // Only existing business accounts can change password here.
+            // Community users must use "Switch to business".
+            if (($user['account_type'] ?? 'user') === 'business') {
+                $data['password_hash'] = $model->hashPassword($password);
             }
         }
 
@@ -346,6 +352,40 @@ class AccountController extends BaseController
         $this->setAppUserSession($fresh);
 
         return redirect()->to(base_url('dashboard'))->with('success', lang('App.profile_updated') ?: 'Profile updated');
+    }
+
+    /**
+     * Switch community user → business account (set password).
+     * Listing stays tied to this mobile/contact number (one business max).
+     */
+    public function upgradeBusiness()
+    {
+        $user = $this->currentAppUser();
+        if (! $user) {
+            return redirect()->to(base_url('login'));
+        }
+
+        $password = (string) $this->request->getPost('password');
+        $confirm  = (string) $this->request->getPost('password_confirm');
+
+        if (strlen($password) < 6) {
+            return redirect()->back()->with('error', lang('App.password_min') ?: 'Password must be at least 6 characters');
+        }
+        if ($confirm !== '' && $confirm !== $password) {
+            return redirect()->back()->with('error', lang('App.password_mismatch') ?: 'Password confirmation does not match');
+        }
+
+        $model = new AppUserModel();
+        $model->update((int) $user['id'], [
+            'account_type'  => 'business',
+            'password_hash' => $model->hashPassword($password),
+            'status'        => 'active',
+        ]);
+        $fresh = $model->find((int) $user['id']);
+        $this->setAppUserSession($fresh);
+
+        return redirect()->to(base_url('dashboard?tab=business'))
+            ->with('success', lang('App.upgraded_business') ?: 'Switched to business account. You can add your listing now.');
     }
 
     public function businessCreate()
@@ -392,14 +432,24 @@ class AccountController extends BaseController
 
         helper('seo');
         $model = new BusinessModel();
+        $accountPhone = (new AppUserModel())->normalizePhone((string) ($user['phone'] ?? ''));
+        if ($accountPhone !== '' && $model->contactPhoneHasBusiness($accountPhone)) {
+            return redirect()->to(base_url('dashboard?tab=business'))
+                ->with('error', lang('App.one_business_per_account') ?: 'A business is already registered with this contact number.');
+        }
+
         $photo = $this->handleImageUpload();
         $data  = $parsed['data'] + [
             'user_id'    => (int) $user['id'],
             'owner_name' => $user['name'],
+            'phone'      => $accountPhone,
             'slug'       => 'pending-' . bin2hex(random_bytes(4)),
             'status'     => 'pending',
             'featured'   => 0,
         ];
+        if ($accountPhone !== '') {
+            $data['phone'] = $accountPhone;
+        }
         if ($photo) {
             $data['image'] = $photo;
         }
@@ -544,6 +594,12 @@ class AccountController extends BaseController
 
         helper('seo');
         $photo = $this->handleImageUpload();
+        $accountPhone = (new AppUserModel())->normalizePhone((string) (session()->get('app_user_phone') ?: ''));
+
+        if ($accountPhone !== '' && $model->contactPhoneHasBusiness($accountPhone)) {
+            return;
+        }
+
         $data  = $parsed['data'] + [
             'user_id'    => $userId,
             'owner_name' => $ownerName,
@@ -551,9 +607,8 @@ class AccountController extends BaseController
             'status'     => 'pending',
             'featured'   => 0,
         ];
-        if (empty($data['phone'])) {
-            $data['phone'] = (string) (session()->get('app_user_phone') ?: '');
-        }
+        // Business is registered against the account contact number
+        $data['phone'] = $accountPhone !== '' ? $accountPhone : ($data['phone'] ?? '');
         if ($photo) {
             $data['image'] = $photo;
         }

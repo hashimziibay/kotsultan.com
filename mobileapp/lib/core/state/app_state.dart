@@ -315,6 +315,61 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Switch community user → business (requires online + password).
+  Future<bool> upgradeToBusiness({
+    required String password,
+    String? confirmPassword,
+  }) async {
+    error = null;
+    notifyListeners();
+
+    if (user == null) {
+      error = 'Please sign in first';
+      notifyListeners();
+      return false;
+    }
+    if (password.length < 6) {
+      error = 'Password must be at least 6 characters';
+      notifyListeners();
+      return false;
+    }
+    if (confirmPassword != null && confirmPassword != password) {
+      error = 'Password confirmation does not match';
+      notifyListeners();
+      return false;
+    }
+
+    // Ensure we have a server session before upgrading.
+    if (api.token == null || api.token!.isEmpty) {
+      final synced = await _registerWithServer(
+        name: user!.name,
+        phone: user!.phone,
+        localeCode: user!.locale,
+        theme: user!.theme,
+        accountType: 'user',
+      );
+      if (!synced || api.token == null || api.token!.isEmpty) {
+        error = error ?? 'Could not sync account. Check internet and try again.';
+        notifyListeners();
+        return false;
+      }
+    }
+
+    try {
+      final res = await api.post('auth/upgrade-business', body: {
+        'password': password,
+        'password_confirm': confirmPassword ?? password,
+      });
+      final data = res['data'] as Map<String, dynamic>;
+      await applyServerUser(data);
+      return true;
+    } catch (e) {
+      error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> _registerWithServer({
     required String name,
     required String phone,
@@ -429,6 +484,15 @@ class AppState extends ChangeNotifier {
     themeMode = theme == 'dark' ? ThemeMode.dark : ThemeMode.light;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConstants.prefTheme, theme);
+    notifyListeners();
+  }
+
+  Future<void> applyServerUser(Map<String, dynamic> json) async {
+    user = AppUser.fromJson(json);
+    locale = user!.locale;
+    api.locale = locale;
+    themeMode = user!.theme == 'dark' ? ThemeMode.dark : ThemeMode.light;
+    await _persistUser(user!);
     notifyListeners();
   }
 

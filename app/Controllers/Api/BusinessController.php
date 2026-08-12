@@ -72,6 +72,38 @@ class BusinessController extends BaseApiController
         }, $categories));
     }
 
+    public function areas()
+    {
+        $this->applyLocale();
+        $rows = (new \App\Models\AreaModel())->orderBy('name_en', 'ASC')->findAll();
+
+        return $this->jsonOk(array_map(static function ($a) {
+            return [
+                'id'      => (int) $a['id'],
+                'name'    => $a['name_en'] ?? ($a['name_ur'] ?? ''),
+                'name_en' => $a['name_en'] ?? '',
+                'name_ur' => $a['name_ur'] ?? '',
+                'slug'    => $a['slug'] ?? null,
+            ];
+        }, $rows));
+    }
+
+    public function villages()
+    {
+        $this->applyLocale();
+        $rows = (new \App\Models\VillageModel())->orderBy('name_en', 'ASC')->findAll();
+
+        return $this->jsonOk(array_map(static function ($v) {
+            return [
+                'id'      => (int) $v['id'],
+                'name'    => $v['name_en'] ?? ($v['name_ur'] ?? ''),
+                'name_en' => $v['name_en'] ?? '',
+                'name_ur' => $v['name_ur'] ?? '',
+                'slug'    => $v['slug'] ?? null,
+            ];
+        }, $rows));
+    }
+
     private function mapBusinessCard(array $b): array
     {
         $image = function_exists('get_business_image_url')

@@ -5,12 +5,20 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../business/my_business_list_screen.dart';
+import '../business/upgrade_business_screen.dart';
 import '../profile/profile_screen.dart';
 import '../shell/app_drawer.dart';
 import 'about_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
+
+  void _openBusiness(BuildContext context, AppState app) {
+    final page = app.user?.isBusiness == true
+        ? const MyBusinessListScreen()
+        : const UpgradeBusinessScreen();
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,19 +41,24 @@ class MoreScreen extends StatelessWidget {
                 subtitle: app.t(en: 'Name, phone, language, theme', ur: 'نام، نمبر، زبان، تھیم'),
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
               ),
-              if (app.user?.isBusiness == true) ...[
+              if (app.user != null) ...[
                 const Divider(height: 1),
                 _MenuTile(
                   icon: Icons.storefront_outlined,
                   color: AppColors.amber,
-                  title: app.t(en: 'My Business', ur: 'میرا کاروبار'),
-                  subtitle: app.t(
-                    en: 'Add or update your shop listing',
-                    ur: 'اپنا کاروبار شامل یا اپڈیٹ کریں',
-                  ),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const MyBusinessListScreen()),
-                  ),
+                  title: app.user!.isBusiness
+                      ? app.t(en: 'My Business', ur: 'میرا کاروبار')
+                      : app.t(en: 'Switch to Business', ur: 'کاروباری اکاؤنٹ'),
+                  subtitle: app.user!.isBusiness
+                      ? app.t(
+                          en: 'Add or update your shop listing',
+                          ur: 'اپنا کاروبار شامل یا اپڈیٹ کریں',
+                        )
+                      : app.t(
+                          en: 'Set a password, then list one shop on your number',
+                          ur: 'پاس ورڈ سیٹ کریں، پھر اپنے نمبر پر ایک دکان درج کریں',
+                        ),
+                  onTap: () => _openBusiness(context, app),
                 ),
               ],
             ],

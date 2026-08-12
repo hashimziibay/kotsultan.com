@@ -208,9 +208,7 @@ class AuthController extends BaseApiController
                 return $this->jsonError('Password must be at least 6 characters', 422);
             }
             $data['password_hash'] = $model->hashPassword($password);
-            if (($user['account_type'] ?? 'user') !== 'business') {
-                $data['account_type'] = 'business';
-            }
+            // Password update alone does not switch account type — use upgrade-business.
         }
 
         if ($data !== []) {
@@ -219,5 +217,48 @@ class AuthController extends BaseApiController
 
         $fresh = $model->find($user['id']);
         return $this->jsonOk($model->publicProfile($fresh), 'Profile updated');
+    }
+
+    /**
+     * Switch a community user to a business account (requires password).
+     * Business identity stays tied to the same contact/mobile number.
+     */
+    public function upgradeBusiness()
+    {
+        $user = $this->currentAppUser();
+        if (! $user) {
+            return $this->jsonError('Unauthorized', 401);
+        }
+
+        $payload  = $this->request->getJSON(true) ?: $this->request->getPost();
+        $password = (string) ($payload['password'] ?? '');
+        $confirm  = (string) ($payload['password_confirm'] ?? $payload['confirm_password'] ?? '');
+
+        if (strlen($password) < 6) {
+            return $this->jsonError('Password must be at least 6 characters', 422);
+        }
+        if ($confirm !== '' && $confirm !== $password) {
+            return $this->jsonError('Password confirmation does not match', 422);
+        }
+
+        $model = new AppUserModel();
+
+        if (($user['account_type'] ?? 'user') === 'business' && ! empty($user['password_hash'])) {
+            // Already a business account — optionally rotate password
+            $model->update((int) $user['id'], [
+                'password_hash' => $model->hashPassword($password),
+            ]);
+            $fresh = $model->find((int) $user['id']);
+            return $this->jsonOk($model->publicProfile($fresh), 'Business password updated');
+        }
+
+        $model->update((int) $user['id'], [
+            'account_type'  => 'business',
+            'password_hash' => $model->hashPassword($password),
+            'status'        => 'active',
+        ]);
+        $fresh = $model->find((int) $user['id']);
+
+        return $this->jsonOk($model->publicProfile($fresh), 'Switched to business account');
     }
 }

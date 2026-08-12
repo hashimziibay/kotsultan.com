@@ -61,11 +61,58 @@ class BusinessModel extends Model
         return $this->findOwnedByUser($userId) !== null;
     }
 
+    /**
+     * Find a listing already registered under this contact number
+     * (digits-only match on businesses.phone).
+     */
+    public function findByContactPhone(string $phone): ?array
+    {
+        $digits = preg_replace('/\D+/', '', $phone) ?? '';
+        if ($digits === '' || strlen($digits) < 10) {
+            return null;
+        }
+
+        // Match phone by digits only (ignore spaces, dashes, +)
+        $row = $this->db->table($this->table)
+            ->select('id, user_id, phone, name_en, status')
+            ->where(
+                "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(phone,''), ' ', ''), '-', ''), '+', ''), '(', ''), ')', '')",
+                $digits,
+                false
+            )
+            ->orderBy('id', 'ASC')
+            ->get(1)
+            ->getRowArray();
+
+        return $row ?: null;
+    }
+
+    public function contactPhoneHasBusiness(string $phone, ?int $exceptBusinessId = null): bool
+    {
+        $existing = $this->findByContactPhone($phone);
+        if (! $existing) {
+            return false;
+        }
+        if ($exceptBusinessId !== null && (int) $existing['id'] === $exceptBusinessId) {
+            return false;
+        }
+        return true;
+    }
+
     public function getRecentBusinesses($limit = 6)
     {
         $rows = $this->baseQuery()
                      ->where('businesses.status', 'active')
                      ->orderBy('businesses.created_at', 'DESC')
+                     ->findAll($limit);
+        return $this->localizedRows($rows);
+    }
+
+    public function getRandomBusinesses(int $limit = 6): array
+    {
+        $rows = $this->baseQuery()
+                     ->where('businesses.status', 'active')
+                     ->orderBy('RAND()', '', false)
                      ->findAll($limit);
         return $this->localizedRows($rows);
     }

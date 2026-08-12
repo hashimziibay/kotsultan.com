@@ -90,6 +90,27 @@ class ApiClient {
     );
   }
 
+  /// Multipart POST (e.g. business image upload). Uses POST for create and update
+  /// (Android proxies often strip PUT multipart).
+  Future<Map<String, dynamic>> postMultipart(
+    String path, {
+    Map<String, String>? fields,
+    List<http.MultipartFile>? files,
+  }) {
+    return _send(() async {
+      final req = http.MultipartRequest('POST', _uri(path));
+      req.headers.addAll(_headers);
+      if (fields != null) {
+        req.fields.addAll(fields);
+      }
+      if (files != null) {
+        req.files.addAll(files);
+      }
+      final streamed = await req.send();
+      return await http.Response.fromStream(streamed);
+    });
+  }
+
   Map<String, dynamic> _decode(http.Response res) {
     Map<String, dynamic> json;
     try {

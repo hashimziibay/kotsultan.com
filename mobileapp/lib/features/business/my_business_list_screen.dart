@@ -5,6 +5,7 @@ import '../../core/api/api_client.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_theme.dart';
 import 'my_business_form_screen.dart';
+import 'upgrade_business_screen.dart';
 
 class MyBusinessListScreen extends StatefulWidget {
   const MyBusinessListScreen({super.key});
@@ -30,15 +31,26 @@ class _MyBusinessListScreenState extends State<MyBusinessListScreen> {
       _error = null;
     });
     try {
-      final api = context.read<AppState>().api;
+      final app = context.read<AppState>();
+      final api = app.api;
       final res = await api.get('my-businesses');
       final data = res['data'] as Map<String, dynamic>? ?? {};
       final raw = (data['items'] as List?) ?? const [];
+      final userJson = data['user'];
+      if (userJson is Map) {
+        await app.applyServerUser(Map<String, dynamic>.from(userJson));
+      }
       setState(() {
         _items = raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         _loading = false;
       });
     } catch (e) {
+      if (e is ApiException && (e.statusCode == 403) && mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const UpgradeBusinessScreen()),
+        );
+        return;
+      }
       setState(() {
         _error = e is ApiException ? e.message : e.toString();
         _loading = false;

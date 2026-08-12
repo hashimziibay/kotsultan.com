@@ -2,8 +2,11 @@
 
 namespace App\Controllers\Api;
 
+use App\Models\AppUserModel;
+use App\Models\AreaModel;
 use App\Models\BusinessModel;
 use App\Models\CategoryModel;
+use App\Models\VillageModel;
 
 /**
  * Authenticated business-owner listing management.
@@ -11,6 +14,36 @@ use App\Models\CategoryModel;
  */
 class MyBusinessController extends BaseApiController
 {
+    public function formOptions()
+    {
+        $user = $this->requireBusinessUser();
+        if ($user instanceof \CodeIgniter\HTTP\ResponseInterface) {
+            return $user;
+        }
+
+        $categories = (new CategoryModel())->orderBy('name_en', 'ASC')->findAll();
+        $areas      = (new AreaModel())->orderBy('name_en', 'ASC')->findAll();
+        $villages   = (new VillageModel())->orderBy('name_en', 'ASC')->findAll();
+
+        $map = static function (array $rows): array {
+            return array_map(static function ($r) {
+                return [
+                    'id'      => (int) $r['id'],
+                    'name_en' => $r['name_en'] ?? '',
+                    'name_ur' => $r['name_ur'] ?? '',
+                    'name'    => ($r['name_en'] ?? '') !== '' ? $r['name_en'] : ($r['name_ur'] ?? ''),
+                ];
+            }, $rows);
+        };
+
+        return $this->jsonOk([
+            'categories' => $map($categories),
+            'areas'      => $map($areas),
+            'villages'   => $map($villages),
+            'account_phone' => (new AppUserModel())->normalizePhone((string) ($user['phone'] ?? '')),
+        ]);
+    }
+
     public function index()
     {
         $user = $this->requireBusinessUser();
@@ -25,6 +58,7 @@ class MyBusinessController extends BaseApiController
 
         return $this->jsonOk([
             'items' => array_map([$this, 'mapBusiness'], $rows),
+            'user'  => (new AppUserModel())->publicProfile($user),
         ]);
     }
 
@@ -51,6 +85,8 @@ class MyBusinessController extends BaseApiController
         }
 
         $model = new BusinessModel();
+        $accountPhone = (new AppUserModel())->normalizePhone((string) ($user['phone'] ?? ''));
+
         $existing = $model->findOwnedByUser((int) $user['id']);
         if ($existing) {
             return $this->jsonError(
@@ -60,20 +96,36 @@ class MyBusinessController extends BaseApiController
             );
         }
 
+        if ($accountPhone !== '' && $model->contactPhoneHasBusiness($accountPhone)) {
+            return $this->jsonError(
+                'A business is already registered with this contact number.',
+                409
+            );
+        }
+
         $payload = $this->request->getJSON(true) ?: $this->request->getPost();
-        $parsed  = $this->parseBusinessPayload($payload);
+        $parsed  = $this->parseBusinessPayload(is_array($payload) ? $payload : []);
         if (isset($parsed['error'])) {
             return $this->jsonError($parsed['error'], 422);
         }
 
         helper('seo');
+        $photo = $this->handleImageUpload();
         $data  = $parsed['data'] + [
             'user_id'    => (int) $user['id'],
             'owner_name' => $user['name'],
+            'phone'      => $accountPhone !== '' ? $accountPhone : ($parsed['data']['phone'] ?? ''),
             'slug'       => 'pending-' . bin2hex(random_bytes(4)),
             'status'     => 'pending', // admin approves
             'featured'   => 0,
         ];
+        // Always register listing against account contact number
+        if ($accountPhone !== '') {
+            $data['phone'] = $accountPhone;
+        }
+        if ($photo) {
+            $data['image'] = $photo;
+        }
 
         $id = (int) $model->insert($data);
         if ($id < 1) {
@@ -86,6 +138,7 @@ class MyBusinessController extends BaseApiController
 
         return $this->jsonOk([
             'business' => $this->mapBusiness($biz),
+            'user'     => (new AppUserModel())->publicProfile($user),
         ], 'Business submitted for review', 201);
     }
 
@@ -102,7 +155,7 @@ class MyBusinessController extends BaseApiController
         }
 
         $payload = $this->request->getJSON(true) ?: $this->request->getRawInput() ?: $this->request->getPost();
-        $parsed  = $this->parseBusinessPayload($payload, false);
+        $parsed  = $this->parseBusinessPayload(is_array($payload) ? $payload : [], false);
         if (isset($parsed['error'])) {
             return $this->jsonError($parsed['error'], 422);
         }
@@ -117,6 +170,17 @@ class MyBusinessController extends BaseApiController
             $data['status'] = 'pending';
         }
 
+        $photo = $this->handleImageUpload();
+        if ($photo) {
+            $data['image'] = $photo;
+        }
+
+        // Keep listing phone tied to account contact number
+        $accountPhone = (new AppUserModel())->normalizePhone((string) ($user['phone'] ?? ''));
+        if ($accountPhone !== '') {
+            $data['phone'] = $accountPhone;
+        }
+
         (new BusinessModel())->update((int) $biz['id'], $data);
         $fresh = (new BusinessModel())->find((int) $biz['id']);
 
@@ -126,6 +190,8 @@ class MyBusinessController extends BaseApiController
     }
 
     /**
+     * Business accounts only. Community users must call auth/upgrade-business first.
+     *
      * @return array|ResponseInterface
      */
     private function requireBusinessUser()
@@ -134,9 +200,23 @@ class MyBusinessController extends BaseApiController
         if (! $user) {
             return $this->jsonError('Unauthorized', 401);
         }
+
         if (($user['account_type'] ?? 'user') !== 'business') {
-            return $this->jsonError('Only business accounts can manage listings', 403);
+            return $this->jsonError(
+                'Switch to a business account and set a password to manage listings.',
+                403,
+                ['code' => 'upgrade_required']
+            );
         }
+
+        if (empty($user['password_hash'])) {
+            return $this->jsonError(
+                'Set a business password before managing listings.',
+                403,
+                ['code' => 'password_required']
+            );
+        }
+
         return $user;
     }
 
@@ -241,5 +321,28 @@ class MyBusinessController extends BaseApiController
             'created_at'      => $b['created_at'] ?? null,
             'updated_at'      => $b['updated_at'] ?? null,
         ];
+    }
+
+    private function handleImageUpload(): ?string
+    {
+        $file = $this->request->getFile('image');
+        if (! $file || ! $file->isValid() || $file->hasMoved()) {
+            return null;
+        }
+
+        $mime = (string) $file->getMimeType();
+        if ($mime !== '' && strpos($mime, 'image/') !== 0) {
+            return null;
+        }
+
+        $dir = FCPATH . 'uploads/businesses';
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        $newName = $file->getRandomName();
+        $file->move($dir, $newName);
+
+        return 'uploads/businesses/' . $newName;
     }
 }

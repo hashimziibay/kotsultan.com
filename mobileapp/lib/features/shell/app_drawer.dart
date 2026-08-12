@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../business/my_business_list_screen.dart';
+import '../business/upgrade_business_screen.dart';
 import '../more/about_screen.dart';
 import '../more/more_screen.dart';
 import '../profile/profile_screen.dart';
@@ -154,12 +155,19 @@ class AppDrawer extends StatelessWidget {
                     label: app.t(en: 'More', ur: 'مزید'),
                     onTap: () => _goTab(context, 4),
                   ),
-                  if (app.user?.isBusiness == true)
+                  if (app.user != null)
                     _DrawerTile(
                       selected: false,
                       icon: Icons.business_center_outlined,
-                      label: app.t(en: 'My Business', ur: 'میرا کاروبار'),
-                      onTap: () => _push(context, const MyBusinessListScreen()),
+                      label: app.user!.isBusiness
+                          ? app.t(en: 'My Business', ur: 'میرا کاروبار')
+                          : app.t(en: 'Switch to Business', ur: 'کاروباری اکاؤنٹ'),
+                      onTap: () => _push(
+                        context,
+                        app.user!.isBusiness
+                            ? const MyBusinessListScreen()
+                            : const UpgradeBusinessScreen(),
+                      ),
                     ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),

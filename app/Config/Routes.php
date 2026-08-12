@@ -32,6 +32,7 @@ $routes->post('/add-business/check', 'AccountController::checkAddBusinessPhone')
 $routes->group('', ['filter' => 'appUserAuth'], static function ($routes) {
     $routes->get('/dashboard', 'AccountController::dashboard');
     $routes->post('/dashboard/profile', 'AccountController::updateProfile');
+    $routes->post('/dashboard/upgrade-business', 'AccountController::upgradeBusiness');
     $routes->get('/dashboard/business/create', 'AccountController::businessCreate');
     $routes->post('/dashboard/business/create', 'AccountController::businessStore');
     $routes->get('/dashboard/business/edit/(:num)', 'AccountController::businessEdit/$1');
@@ -165,8 +166,11 @@ $routes->group('api', ['namespace' => 'App\Controllers\Api'], static function ($
     $routes->get('auth/me', 'AuthController::me', ['filter' => 'apiAuth']);
     $routes->put('auth/me', 'AuthController::updateMe', ['filter' => 'apiAuth']);
     $routes->post('auth/me', 'AuthController::updateMe', ['filter' => 'apiAuth']); // Android/proxy fallback
+    $routes->post('auth/upgrade-business', 'AuthController::upgradeBusiness', ['filter' => 'apiAuth']);
+    $routes->put('auth/upgrade-business', 'AuthController::upgradeBusiness', ['filter' => 'apiAuth']);
 
     $routes->get('my-businesses', 'MyBusinessController::index', ['filter' => 'apiAuth']);
+    $routes->get('my-businesses/form-options', 'MyBusinessController::formOptions', ['filter' => 'apiAuth']);
     $routes->post('my-businesses', 'MyBusinessController::store', ['filter' => 'apiAuth']);
     $routes->get('my-businesses/(:num)', 'MyBusinessController::show/$1', ['filter' => 'apiAuth']);
     $routes->put('my-businesses/(:num)', 'MyBusinessController::update/$1', ['filter' => 'apiAuth']);
@@ -174,6 +178,8 @@ $routes->group('api', ['namespace' => 'App\Controllers\Api'], static function ($
 
     $routes->get('home', 'HomeController::index');
     $routes->get('categories', 'BusinessController::categories');
+    $routes->get('areas', 'BusinessController::areas');
+    $routes->get('villages', 'BusinessController::villages');
     $routes->get('businesses', 'BusinessController::index');
     $routes->get('businesses/(:segment)', 'BusinessController::show/$1');
     $routes->get('emergency', 'EmergencyController::index');

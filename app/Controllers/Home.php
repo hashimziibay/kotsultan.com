@@ -113,28 +113,9 @@ class Home extends BaseController
         $popularCategories = array_merge($popularCategories, $randomSelections);
 
         // ---------------------------------------------------------
-        // Generate Recent Businesses: Max 3, "Bismillah Utensil Store" first
+        // Random businesses for home (6 cards)
         // ---------------------------------------------------------
-        $finalRecent = [];
-        $bismillahStore = $businessModel->getLocalizedBusiness(698); // Bismillah Utensils Store
-
-        if ($bismillahStore !== null) {
-            $finalRecent[] = $bismillahStore;
-        }
-
-        $recentPool = $businessModel->getRecentBusinesses(8);
-        $otherRecent = [];
-        
-        foreach ($recentPool as $bus) {
-            if ($bus['id'] != 698) {
-                $otherRecent[] = $bus;
-            }
-        }
-
-        shuffle($otherRecent);
-        $neededRecent = 3 - count($finalRecent);
-        $randomRecent = array_slice($otherRecent, 0, $neededRecent);
-        $finalRecent = array_merge($finalRecent, $randomRecent);
+        $homeBusinesses = $businessModel->getRandomBusinesses(6);
 
         return view('home', [
             'lang'              => $lang,
@@ -142,7 +123,7 @@ class Home extends BaseController
             'metaDescription'   => lang('App.about_text'),
             'categories'        => $allCategories,
             'popularCategories' => $popularCategories,
-            'recentBusinesses'  => $finalRecent,
+            'recentBusinesses'  => $homeBusinesses,
             'wallEntries'       => [],
             'stats'             => $stats,
         ]);
