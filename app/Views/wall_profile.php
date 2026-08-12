@@ -60,9 +60,11 @@
                 <!-- Metadata Pills -->
                 <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
                     <?php if (!empty($item['years_of_service'])): ?>
-                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700/60">
-                            <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
-                            <strong><?= lang('App.years_active') ?>:</strong> <?= esc($item['years_of_service']) ?>
+                        <span class="inline-flex items-start gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700/60 max-w-full text-start">
+                            <i data-lucide="clock" class="w-4 h-4 text-slate-400 shrink-0 mt-0.5"></i>
+                            <span class="whitespace-pre-wrap break-words leading-relaxed">
+                                <strong><?= lang('App.years_active') ?>:</strong> <?= esc($item['years_of_service']) ?>
+                            </span>
                         </span>
                     <?php endif; ?>
 

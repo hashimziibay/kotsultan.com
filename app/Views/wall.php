@@ -20,6 +20,12 @@
             <p class="blur-reveal text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-3 leading-relaxed">
                 <?= lang('App.wall_subtitle') ?>
             </p>
+            <div class="mt-6">
+                <a href="<?= base_url('wall-of-kot-sultan/submit') ?>" class="btn btn-md btn-primary inline-flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    <span><?= lang('App.wall_submit_cta_short') ?></span>
+                </a>
+            </div>
         </div>
     </div>
 </section>
@@ -392,9 +398,9 @@
 
                                     <!-- Years of Service / Lifespan -->
                                     <?php if (!empty($item['years_of_service'])): ?>
-                                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-4">
-                                            <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
-                                            <span><?= esc($item['years_of_service']) ?></span>
+                                        <div class="flex items-start gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-4 max-w-full">
+                                            <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5"></i>
+                                            <span class="whitespace-pre-wrap break-words leading-relaxed"><?= esc($item['years_of_service']) ?></span>
                                         </div>
                                     <?php endif; ?>
 

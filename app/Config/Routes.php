@@ -9,6 +9,8 @@ $routes->get('/directory/(:segment)', 'Home::directory/$1');
 $routes->get('/category/(:segment)', 'Home::directory/$1');
 $routes->get('/listings', 'Home::directory'); // Alias for backward compatibility
 $routes->get('/wall-of-kot-sultan', 'Home::wall');
+$routes->get('/wall-of-kot-sultan/submit', 'WallSubmitController::index');
+$routes->post('/wall-of-kot-sultan/submit', 'WallSubmitController::store');
 $routes->get('/wall-of-kot-sultan/(:segment)', 'Home::wallProfile/$1');
 $routes->get('/volunteer', 'Home::volunteer');
 $routes->get('/about', 'Home::about');
@@ -106,6 +108,7 @@ $routes->group('admin', ['filter' => 'adminAuth'], static function ($routes) {
     $routes->post('wall-of-kot-sultan/edit/(:num)', 'Admin\WallController::update/$1');
     $routes->post('wall-of-kot-sultan/delete/(:num)', 'Admin\WallController::delete/$1');
     $routes->post('wall-of-kot-sultan/toggle/(:num)', 'Admin\WallController::toggle/$1');
+    $routes->post('wall-of-kot-sultan/approve/(:num)', 'Admin\WallController::approve/$1');
     $routes->post('wall-of-kot-sultan/(:num)/attachment/(:num)/delete', 'Admin\WallController::deleteAttachment/$1/$2');
 
     // Wall personality categories

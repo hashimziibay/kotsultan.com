@@ -54,8 +54,8 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1"><?= lang('App.admin_years_service') ?></label>
-                    <input type="text" name="years_of_service" value="<?= esc($person['years_of_service'] ?? '') ?>" placeholder="e.g. 1980 - 2015"
-                           class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                    <textarea name="years_of_service" rows="2" placeholder="e.g. 1980 - 2015"
+                              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium"><?= esc($person['years_of_service'] ?? '') ?></textarea>
                 </div>
 
                 <div>
@@ -148,8 +148,17 @@
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1"><?= lang('App.status') ?></label>
                     <select name="status" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold">
                         <option value="active" <?= ($person['status'] ?? 'active') === 'active' ? 'selected' : '' ?>><?= lang('App.admin_active_status') ?></option>
+                        <option value="pending" <?= ($person['status'] ?? '') === 'pending' ? 'selected' : '' ?>><?= lang('App.admin_pending_status') ?: 'Pending' ?></option>
                         <option value="inactive" <?= ($person['status'] ?? '') === 'inactive' ? 'selected' : '' ?>><?= lang('App.admin_inactive_status') ?></option>
                     </select>
+                    <?php if (!empty($person['submitter_name']) || !empty($person['submitter_phone'])): ?>
+                        <p class="mt-2 text-[10px] text-slate-500 leading-relaxed">
+                            <?= lang('App.admin_wall_submitted_by') ?>:
+                            <strong><?= esc($person['submitter_name'] ?? '') ?></strong>
+                            <?php if (!empty($person['submitter_phone'])): ?> · <?= esc($person['submitter_phone']) ?><?php endif; ?>
+                            <?php if (!empty($person['submitter_email'])): ?> · <?= esc($person['submitter_email']) ?><?php endif; ?>
+                        </p>
+                    <?php endif; ?>
                 </div>
             </div>
 

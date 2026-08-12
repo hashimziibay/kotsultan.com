@@ -55,7 +55,7 @@ $displayEntries = ($mode === 'preview') ? array_slice($wallEntries ?? [], 0, 6) 
                             <?= esc($person['display_name']) ?>
                         </h3>
                         
-                        <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-4">
+                        <span class="inline-block px-3 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-4 max-w-full whitespace-pre-wrap break-words leading-relaxed text-start">
                             <?= lang('App.years_service') ?>: <?= esc($person['years_of_service']) ?>
                         </span>
                         
@@ -110,7 +110,7 @@ $displayEntries = ($mode === 'preview') ? array_slice($wallEntries ?? [], 0, 6) 
                         <?= esc($person['display_name']) ?>
                     </h3>
                     
-                    <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-4">
+                    <span class="inline-block px-3 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-4 max-w-full whitespace-pre-wrap break-words leading-relaxed text-start">
                         <?= lang('App.years_service') ?>: <?= esc($person['years_of_service']) ?>
                     </span>
                     

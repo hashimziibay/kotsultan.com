@@ -32,6 +32,9 @@ class WallModel extends Model
         'views',
         'display_order',
         'status',
+        'submitter_name',
+        'submitter_phone',
+        'submitter_email',
     ];
 
     protected $useTimestamps = true;

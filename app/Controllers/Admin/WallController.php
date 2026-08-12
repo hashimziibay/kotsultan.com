@@ -17,6 +17,7 @@ class WallController extends BaseController
 
         $query    = trim((string) $this->request->getGet('q'));
         $category = $this->request->getGet('category');
+        $status   = trim((string) ($this->request->getGet('status') ?? ''));
 
         $builder = $wallModel->select('wall_of_kot_sultan.*, wall_categories.name_en as category_name_en, wall_categories.name_ur as category_name_ur')
                              ->join('wall_categories', 'wall_categories.id = wall_of_kot_sultan.category_id', 'left');
@@ -33,6 +34,10 @@ class WallController extends BaseController
                 ->groupEnd();
         }
 
+        if ($status === 'active' || $status === 'inactive' || $status === 'pending') {
+            $builder->where('wall_of_kot_sultan.status', $status);
+        }
+
         if (!empty($query)) {
             $builder->groupStart()
                         ->like('wall_of_kot_sultan.name_en', $query)
@@ -42,8 +47,11 @@ class WallController extends BaseController
                     ->groupEnd();
         }
 
-        $items = $builder->orderBy('wall_of_kot_sultan.featured', 'DESC')
+        // Pending first, then featured, then order
+        $items = $builder->orderBy("FIELD(wall_of_kot_sultan.status, 'pending', 'active', 'inactive')", '', false)
+                         ->orderBy('wall_of_kot_sultan.featured', 'DESC')
                          ->orderBy('wall_of_kot_sultan.display_order', 'ASC')
+                         ->orderBy('wall_of_kot_sultan.id', 'DESC')
                          ->findAll();
 
         $allCategories = $wallCategoryModel->orderBy('display_order', 'ASC')->findAll();
@@ -64,6 +72,8 @@ class WallController extends BaseController
         }
         unset($item);
 
+        $pendingCount = $wallModel->where('status', 'pending')->countAllResults();
+
         return view('admin/wall/index', [
             'title'            => lang('App.admin_page_wall_management'),
             'pageHeading'      => 'Wall Personalities & Legends',
@@ -71,6 +81,8 @@ class WallController extends BaseController
             'categories'       => $allCategories,
             'query'            => $query,
             'selectedCategory' => $category,
+            'selectedStatus'   => $status,
+            'pendingCount'     => $pendingCount,
         ]);
     }
 
@@ -288,6 +300,10 @@ class WallController extends BaseController
         $person    = $wallModel->find($id);
 
         if ($person) {
+            // Pending nominations should be approved via approve(), not toggled.
+            if (($person['status'] ?? '') === 'pending') {
+                return redirect()->back()->with('error', lang('App.admin_wall_use_approve') ?: 'Use Approve for pending nominations.');
+            }
             $newStatus = ($person['status'] === 'active') ? 'inactive' : 'active';
             $wallModel->update($id, ['status' => $newStatus]);
             AdminActivityLogModel::log('Toggled Wall Status', 'Wall of Kot Sultan', $id, "Status changed to $newStatus");
@@ -295,6 +311,21 @@ class WallController extends BaseController
         }
 
         return redirect()->back()->with('error', lang('App.admin_msg_entry_not_found'));
+    }
+
+    public function approve($id)
+    {
+        $wallModel = new WallModel();
+        $person    = $wallModel->find($id);
+
+        if (! $person) {
+            return redirect()->back()->with('error', lang('App.admin_msg_entry_not_found'));
+        }
+
+        $wallModel->update((int) $id, ['status' => 'active']);
+        AdminActivityLogModel::log('Approved Wall Entry', 'Wall of Kot Sultan', $id, 'Approved public nomination: ' . ($person['name_en'] ?? ''));
+
+        return redirect()->back()->with('success', lang('App.admin_wall_approved') ?: 'Personality approved and published.');
     }
 
     public function deleteAttachment($id, $attachmentId)
