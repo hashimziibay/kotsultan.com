@@ -248,6 +248,49 @@ html[lang="ur"] .nav-lang-menu a[lang="ur"] .nav-lang-option-label {
 
             <!-- Controls: Language Switcher & Dark Mode Toggle -->
             <div class="nav-controls flex items-center justify-center gap-1.5 shrink-0 h-9">
+
+                <?php
+                    $appLoggedIn = (bool) session()->get('app_user_logged_in');
+                    $appUserName = (string) (session()->get('app_user_name') ?? '');
+                    $appIsBusiness = session()->get('app_user_type') === 'business';
+                    $ownedBiz = null;
+                    $bizNavUrl = base_url('add-business');
+                    $bizNavLabel = lang('App.add_business_nav');
+                    if ($appLoggedIn && $appIsBusiness) {
+                        $ownedBiz = (new \App\Models\BusinessModel())->findOwnedByUser((int) session()->get('app_user_id'));
+                        if ($ownedBiz) {
+                            $bizNavUrl = base_url('dashboard?tab=business');
+                            $bizNavLabel = lang('App.dashboard_my_business_listing');
+                        } else {
+                            $bizNavUrl = base_url('dashboard/business/create');
+                            $bizNavLabel = lang('App.add_business_nav');
+                        }
+                    } elseif ($appLoggedIn) {
+                        $bizNavUrl = base_url('add-business');
+                        $bizNavLabel = lang('App.add_business_nav');
+                    }
+                ?>
+                <?php if (! ($appLoggedIn && ! $appIsBusiness)): ?>
+                <a href="<?= $bizNavUrl ?>"
+                   class="inline-flex nav-control-btn btn btn-sm <?= $ownedBiz ? 'btn-secondary' : 'btn-primary' ?> whitespace-nowrap">
+                    <i data-lucide="store" class="w-3.5 h-3.5 shrink-0"></i>
+                    <span class="nav-lang-label leading-none hidden xs:inline sm:inline"><?= esc($bizNavLabel) ?></span>
+                </a>
+                <?php endif; ?>
+                <?php if ($appLoggedIn): ?>
+                    <a href="<?= base_url('dashboard') ?>"
+                       class="hidden sm:inline-flex nav-control-btn btn btn-sm btn-secondary max-w-[9rem] truncate"
+                       title="<?= esc($appUserName) ?>">
+                        <i data-lucide="user" class="w-3.5 h-3.5 text-emerald-600 shrink-0"></i>
+                        <span class="nav-lang-label leading-none truncate"><?= esc($appUserName !== '' ? $appUserName : lang('App.dashboard_my_profile')) ?></span>
+                    </a>
+                <?php else: ?>
+                    <a href="<?= base_url('login') ?>"
+                       class="hidden sm:inline-flex nav-control-btn btn btn-sm btn-secondary">
+                        <i data-lucide="log-in" class="w-3.5 h-3.5 text-emerald-600 shrink-0"></i>
+                        <span class="nav-lang-label leading-none"><?= lang('App.login_title') ?></span>
+                    </a>
+                <?php endif; ?>
                 
                 <!-- Magic UI Style Animated Theme Toggler -->
                 <button @click="toggleTheme($event)" 
@@ -324,5 +367,29 @@ html[lang="ur"] .nav-lang-menu a[lang="ur"] .nav-lang-option-label {
                 <?php endif; ?>
             </a>
         <?php endforeach; ?>
+
+        <?php if ($appLoggedIn): ?>
+            <?php if ($appIsBusiness): ?>
+            <a href="<?= $bizNavUrl ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
+                <span><?= esc($bizNavLabel) ?></span>
+            </a>
+            <?php endif; ?>
+            <a href="<?= base_url('dashboard') ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <span><?= lang('App.dashboard_my_profile') ?></span>
+            </a>
+            <a href="<?= base_url('logout') ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30">
+                <span><?= lang('App.log_out') ?></span>
+            </a>
+        <?php else: ?>
+            <a href="<?= base_url('add-business') ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
+                <span><?= lang('App.list_your_business') ?></span>
+            </a>
+            <a href="<?= base_url('login') ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <span><?= lang('App.login_title') ?></span>
+            </a>
+            <a href="<?= base_url('signup') ?>" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-base font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <span><?= lang('App.signup_title') ?></span>
+            </a>
+        <?php endif; ?>
     </div>
 </nav>

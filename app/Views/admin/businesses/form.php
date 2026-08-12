@@ -143,8 +143,21 @@
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1"><?= lang('App.admin_listing_status') ?></label>
                     <select name="status" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold">
                         <option value="active" <?= ($business['status'] ?? 'active') === 'active' ? 'selected' : '' ?>><?= lang('App.admin_active_status') ?></option>
+                        <option value="pending" <?= ($business['status'] ?? '') === 'pending' ? 'selected' : '' ?>>Pending (app review)</option>
                         <option value="inactive" <?= ($business['status'] ?? '') === 'inactive' ? 'selected' : '' ?>><?= lang('App.admin_inactive_status') ?></option>
                     </select>
+                    <?php if (!empty($ownerAppUser)): ?>
+                        <p class="mt-2 text-[11px] text-slate-500">
+                            Submitted by app account:
+                            <a class="font-bold text-emerald-600 hover:underline" href="<?= base_url('admin/app-users/' . (int) $ownerAppUser['id']) ?>">
+                                <?= esc($ownerAppUser['name']) ?> (<?= esc($ownerAppUser['phone']) ?>)
+                            </a>
+                        </p>
+                    <?php elseif (!empty($business['user_id'])): ?>
+                        <p class="mt-2 text-[11px] text-slate-500">
+                            Linked app user id: #<?= (int) $business['user_id'] ?>
+                        </p>
+                    <?php endif; ?>
                 </div>
 
                 <div>

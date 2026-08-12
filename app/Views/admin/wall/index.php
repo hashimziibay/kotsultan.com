@@ -34,7 +34,7 @@
                     <td class="px-4 py-3 font-bold text-slate-900 dark:text-white">
                         <div class="flex items-center gap-3">
                             <img src="<?= !empty($p['photo']) ? base_url($p['photo']) : base_url('images/placeholder-person.jpg') ?>" 
-                                 alt="Photo" class="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700">
+                                 alt="Photo" class="w-10 h-10 rounded-full object-contain bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                             <div>
                                 <a href="<?= base_url('admin/wall-of-kot-sultan/edit/' . $p['id']) ?>" class="hover:text-emerald-500 block leading-snug">
                                     <?= esc($p['name_en']) ?>
@@ -46,9 +46,21 @@
                         </div>
                     </td>
                     <td class="px-4 py-3 text-slate-600 dark:text-slate-300">
-                        <span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 font-bold text-[11px]">
-                            <?= esc($p['category_name_en'] ?? $p['category_id']) ?>
-                        </span>
+                        <div class="flex flex-wrap gap-1">
+                            <?php
+                                $labels = $p['category_labels'] ?? [];
+                                if ($labels === [] && ! empty($p['category_name_en'])) {
+                                    $labels = [$p['category_name_en']];
+                                }
+                            ?>
+                            <?php if ($labels === []): ?>
+                                <span class="text-slate-400 text-[11px]">—</span>
+                            <?php else: ?>
+                                <?php foreach ($labels as $label): ?>
+                                    <span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 font-bold text-[11px]"><?= esc($label) ?></span>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
                     </td>
                     <td class="px-4 py-3 text-slate-600 dark:text-slate-300"><?= esc($p['profession_en'] ?: $p['profession_ur'] ?: 'N/A') ?></td>
                     <td class="px-4 py-3 text-center">

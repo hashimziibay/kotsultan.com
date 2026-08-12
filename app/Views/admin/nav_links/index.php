@@ -107,16 +107,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-TOKEN': '<?= csrf_hash() ?>'
                     },
                     body: JSON.stringify({ order: orderData })
-                }).then(response => response.json())
-                  .then(data => {
-                      if (data.status !== 'success') {
-                          alert('Failed to save order.');
-                      }
-                  });
+                }).then(async (response) => {
+                    const data = await response.json().catch(() => null);
+                    if (!response.ok || !data || data.status !== 'success') {
+                        alert((data && data.message) ? data.message : 'Failed to save order.');
+                    }
+                }).catch(() => {
+                    alert('Failed to save order.');
+                });
             }
         });
     }

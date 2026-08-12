@@ -355,10 +355,10 @@
                                 <div>
                                     <!-- Header Photo & Category Badge -->
                                     <div class="flex items-start justify-between gap-3 mb-4">
-                                        <div class="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-emerald-500/20 group-hover:border-emerald-500 transition-colors shrink-0 shadow-sm">
+                                        <div class="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-emerald-500/20 group-hover:border-emerald-500 transition-colors shrink-0 shadow-sm bg-slate-100 dark:bg-slate-700/60 flex items-center justify-center">
                                             <img src="<?= esc($item['photo_url']) ?>" 
                                                  alt="<?= esc($item['display_name']) ?>" 
-                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                 class="w-full h-full object-contain"
                                                  onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'">
                                         </div>
                                         <div class="flex flex-col items-end gap-1">

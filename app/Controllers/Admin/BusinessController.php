@@ -90,6 +90,7 @@ class BusinessController extends BaseController
             'title'       => lang('App.admin_add_new_business'),
             'pageHeading' => lang('App.admin_page_create_business'),
             'business'    => null,
+            'ownerAppUser'=> null,
             'categories'  => $categoryModel->orderBy('name_en', 'ASC')->findAll(),
             'areas'       => $areaModel->orderBy('name_en', 'ASC')->findAll(),
             'villages'    => $villageModel->orderBy('name_en', 'ASC')->findAll(),
@@ -154,10 +155,16 @@ class BusinessController extends BaseController
         $areaModel     = new AreaModel();
         $villageModel  = new VillageModel();
 
+        $ownerAppUser = null;
+        if (! empty($business['user_id'])) {
+            $ownerAppUser = (new \App\Models\AppUserModel())->find((int) $business['user_id']);
+        }
+
         return view('admin/businesses/form', [
             'title'       => lang('App.admin_page_edit_business', ['#' . $id]),
             'pageHeading' => lang('App.admin_page_edit_business', [($business['name_en'] ?: $business['name_ur'])]),
             'business'    => $business,
+            'ownerAppUser'=> $ownerAppUser,
             'categories'  => $categoryModel->orderBy('name_en', 'ASC')->findAll(),
             'areas'       => $areaModel->orderBy('name_en', 'ASC')->findAll(),
             'villages'    => $villageModel->orderBy('name_en', 'ASC')->findAll(),

@@ -172,13 +172,21 @@ class NavLinkController extends BaseController
 
     public function reorder()
     {
-        $order = $this->request->getPost('order');
-        if (!is_array($order)) {
+        $payload = $this->request->getJSON(true);
+        $order   = is_array($payload) ? ($payload['order'] ?? null) : null;
+        if (! is_array($order)) {
+            $order = $this->request->getPost('order');
+        }
+        if (! is_array($order)) {
             return $this->response->setJSON(['status' => 'error', 'message' => lang('App.admin_invalid_data')]);
         }
 
         foreach ($order as $index => $id) {
-            $this->navLinkModel->update($id, ['sort_order' => $index + 1]);
+            $id = (int) $id;
+            if ($id <= 0) {
+                continue;
+            }
+            $this->navLinkModel->skipValidation(true)->update($id, ['sort_order' => $index + 1]);
         }
 
         $this->activityLogModel->logAction(

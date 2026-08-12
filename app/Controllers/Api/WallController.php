@@ -52,7 +52,11 @@ class WallController extends BaseApiController
             return $this->jsonError('Not found', 404);
         }
 
-        $related = $model->getRelatedPersonalities($entry['category_id'] ?? null, $entry['id'], 4);
+        $related = $model->getRelatedPersonalities(
+            $entry['category_ids'] ?? ($entry['category_id'] ?? null),
+            $entry['id'],
+            4
+        );
         $attachments = [];
         try {
             $attachments = (new \App\Models\WallAttachmentModel())->getForWall((int) $entry['id']);
@@ -121,6 +125,17 @@ class WallController extends BaseApiController
             'category'      => $e['display_category'] ?? ($e['category_name_en'] ?? ($e['category_name'] ?? '')),
             'category_id'   => isset($e['category_id']) ? (int) $e['category_id'] : null,
             'category_slug' => $e['category_slug'] ?? null,
+            'categories'    => array_map(static function ($c) {
+                return [
+                    'id'      => (int) ($c['id'] ?? 0),
+                    'slug'    => $c['slug'] ?? null,
+                    'name'    => $c['name'] ?? '',
+                    'name_en' => $c['name_en'] ?? '',
+                    'name_ur' => $c['name_ur'] ?? '',
+                    'icon'    => $c['icon'] ?? 'user',
+                    'color'   => $c['color'] ?? null,
+                ];
+            }, $e['categories'] ?? []),
             'photo'         => $photo,
             'featured'      => (bool) ($e['featured'] ?? false),
             'views'         => (int) ($e['views'] ?? 0),

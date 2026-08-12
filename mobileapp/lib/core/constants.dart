@@ -52,4 +52,5 @@ class AppConstants {
   static const String prefOnboarded = 'onboarded';
   static const String prefPendingUserSync = 'pending_user_sync';
   static const String prefUserId = 'user_id';
+  static const String prefAccountType = 'account_type';
 }

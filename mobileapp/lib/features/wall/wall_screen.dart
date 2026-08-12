@@ -263,9 +263,13 @@ class _WallScreenState extends State<WallScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.stretch,
                                       children: [
                                         Expanded(
-                                          child: AppNetworkImage(
-                                            url: '${e['photo'] ?? ''}',
-                                            placeholderIcon: Icons.person_rounded,
+                                          child: ColoredBox(
+                                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                            child: AppNetworkImage(
+                                              url: '${e['photo'] ?? ''}',
+                                              fit: BoxFit.contain,
+                                              placeholderIcon: Icons.person_rounded,
+                                            ),
                                           ),
                                         ),
                                         Padding(

@@ -16,18 +16,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _loginPhoneCtrl = TextEditingController();
+  final _loginPasswordCtrl = TextEditingController();
+
   String _locale = 'en';
   String _theme = 'light';
+  String _accountType = 'user'; // user | business
+  bool _modeLogin = false;
   bool _loading = false;
+  bool _obscure = true;
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
+    _passwordCtrl.dispose();
+    _loginPhoneCtrl.dispose();
+    _loginPasswordCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  Future<void> _submitRegister() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     final app = context.read<AppState>();
@@ -37,14 +47,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         phone: _phoneCtrl.text.trim(),
         localeCode: _locale,
         theme: _theme,
+        accountType: _accountType,
+        password: _accountType == 'business' ? _passwordCtrl.text : null,
       );
       if (mounted && app.pendingUserSync) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               _locale == 'ur'
-                  ? 'آف لائن محفوظ ہو گیا — آن لائن ہونے پر ایڈمن کو بھیج دیا جائے گا'
-                  : 'Saved offline — will sync to admin when you are online',
+                  ? 'آف لائن محفوظ ہو گیا — آن لائن ہونے پر سنک ہوگا'
+                  : 'Saved offline — will sync when you are online',
             ),
           ),
         );
@@ -57,6 +69,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       }
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _submitLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _loading = true);
+    final app = context.read<AppState>();
+    final ok = await app.loginBusiness(
+      phone: _loginPhoneCtrl.text.trim(),
+      password: _loginPasswordCtrl.text,
+    );
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(app.error ?? (_locale == 'ur' ? 'لاگ ان ناکام' : 'Login failed'))),
+      );
     }
   }
 
@@ -96,44 +125,155 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 6),
                   Text(
                     isUrdu
-                        ? 'ایک بار اپنی تفصیلات دیں اور ڈائریکٹری استعمال کریں'
-                        : 'Share your details once, then browse the directory',
+                        ? (_modeLogin
+                            ? 'کاروباری اکاؤنٹ میں لاگ ان کریں'
+                            : 'صارف یا کاروبار منتخب کریں')
+                        : (_modeLogin
+                            ? 'Sign in to your business account'
+                            : 'Choose User or Business to get started'),
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
-                  const SizedBox(height: 28),
-                  TextFormField(
-                    controller: _nameCtrl,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: isUrdu ? 'نام' : 'Full name',
-                      prefixIcon: const Icon(Icons.person_outline),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.trim().length < 2) {
-                        return isUrdu ? 'نام درکار ہے' : 'Name is required';
-                      }
-                      return null;
-                    },
+                  const SizedBox(height: 20),
+                  SegmentedButton<bool>(
+                    segments: [
+                      ButtonSegment(
+                        value: false,
+                        label: Text(isUrdu ? 'نیا اکاؤنٹ' : 'Sign up'),
+                        icon: const Icon(Icons.person_add_alt_1_outlined),
+                      ),
+                      ButtonSegment(
+                        value: true,
+                        label: Text(isUrdu ? 'لاگ ان' : 'Login'),
+                        icon: const Icon(Icons.login_rounded),
+                      ),
+                    ],
+                    selected: {_modeLogin},
+                    onSelectionChanged: (s) => setState(() => _modeLogin = s.first),
                   ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _phoneCtrl,
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s]'))],
-                    decoration: InputDecoration(
-                      labelText: isUrdu ? 'رابطہ نمبر' : 'Contact number',
-                      prefixIcon: const Icon(Icons.phone_outlined),
-                      hintText: '03XXXXXXXXX',
+                  const SizedBox(height: 20),
+                  if (!_modeLogin) ...[
+                    Text(
+                      isUrdu ? 'اکاؤنٹ کی قسم' : 'I am a',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    validator: (v) {
-                      final digits = (v ?? '').replaceAll(RegExp(r'\D'), '');
-                      if (digits.length < 10) {
-                        return isUrdu ? 'درست نمبر درج کریں' : 'Enter a valid phone number';
-                      }
-                      return null;
-                    },
-                  ),
+                    const SizedBox(height: 8),
+                    SegmentedButton<String>(
+                      segments: [
+                        ButtonSegment(
+                          value: 'user',
+                          label: Text(isUrdu ? 'صارف' : 'User'),
+                          icon: const Icon(Icons.person_outline),
+                        ),
+                        ButtonSegment(
+                          value: 'business',
+                          label: Text(isUrdu ? 'کاروبار' : 'Business'),
+                          icon: const Icon(Icons.storefront_outlined),
+                        ),
+                      ],
+                      selected: {_accountType},
+                      onSelectionChanged: (s) => setState(() => _accountType = s.first),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _nameCtrl,
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: isUrdu ? 'نام' : 'Full name',
+                        prefixIcon: const Icon(Icons.person_outline),
+                      ),
+                      validator: (v) {
+                        if (_modeLogin) return null;
+                        if (v == null || v.trim().length < 2) {
+                          return isUrdu ? 'نام درکار ہے' : 'Name is required';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: _phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s]'))],
+                      decoration: InputDecoration(
+                        labelText: isUrdu ? 'موبائل نمبر' : 'Mobile number',
+                        prefixIcon: const Icon(Icons.phone_outlined),
+                        hintText: '03XXXXXXXXX',
+                      ),
+                      validator: (v) {
+                        if (_modeLogin) return null;
+                        final digits = (v ?? '').replaceAll(RegExp(r'\D'), '');
+                        if (digits.length < 10) {
+                          return isUrdu ? 'درست نمبر درج کریں' : 'Enter a valid phone number';
+                        }
+                        return null;
+                      },
+                    ),
+                    if (_accountType == 'business') ...[
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: _passwordCtrl,
+                        obscureText: _obscure,
+                        decoration: InputDecoration(
+                          labelText: isUrdu ? 'پاس ورڈ' : 'Password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            onPressed: () => setState(() => _obscure = !_obscure),
+                            icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                          ),
+                          helperText: isUrdu
+                              ? 'کاروباری اکاؤنٹ کے لیے پاس ورڈ ضروری ہے'
+                              : 'Required for business accounts (min 6)',
+                        ),
+                        validator: (v) {
+                          if (_modeLogin || _accountType != 'business') return null;
+                          if (v == null || v.length < 6) {
+                            return isUrdu ? 'کم از کم ۶ حروف' : 'At least 6 characters';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ] else ...[
+                    TextFormField(
+                      controller: _loginPhoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s]'))],
+                      decoration: InputDecoration(
+                        labelText: isUrdu ? 'موبائل نمبر' : 'Mobile number',
+                        prefixIcon: const Icon(Icons.phone_outlined),
+                        hintText: '03XXXXXXXXX',
+                      ),
+                      validator: (v) {
+                        if (!_modeLogin) return null;
+                        final digits = (v ?? '').replaceAll(RegExp(r'\D'), '');
+                        if (digits.length < 10) {
+                          return isUrdu ? 'درست نمبر درج کریں' : 'Enter a valid phone number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: _loginPasswordCtrl,
+                      obscureText: _obscure,
+                      decoration: InputDecoration(
+                        labelText: isUrdu ? 'پاس ورڈ' : 'Password',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(() => _obscure = !_obscure),
+                          icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                        ),
+                      ),
+                      validator: (v) {
+                        if (!_modeLogin) return null;
+                        if (v == null || v.isEmpty) {
+                          return isUrdu ? 'پاس ورڈ درکار ہے' : 'Password is required';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   Text(
                     isUrdu ? 'زبان' : 'Language',
@@ -178,14 +318,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const SizedBox(height: 28),
                   FilledButton(
-                    onPressed: _loading ? null : _submit,
+                    onPressed: _loading ? null : (_modeLogin ? _submitLogin : _submitRegister),
                     child: _loading
                         ? const SizedBox(
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : Text(isUrdu ? 'جاری رکھیں' : 'Continue'),
+                        : Text(
+                            _modeLogin
+                                ? (isUrdu ? 'لاگ ان' : 'Login')
+                                : (isUrdu ? 'جاری رکھیں' : 'Continue'),
+                          ),
                   ),
                 ],
               ),

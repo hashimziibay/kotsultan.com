@@ -50,6 +50,7 @@
         <select name="status" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:outline-none focus:border-emerald-500">
             <option value=""><?= lang('App.admin_all_statuses') ?></option>
             <option value="active" <?= $selectedStatus === 'active' ? 'selected' : '' ?>><?= lang('App.admin_active_status') ?></option>
+            <option value="pending" <?= $selectedStatus === 'pending' ? 'selected' : '' ?>>Pending (app)</option>
             <option value="inactive" <?= $selectedStatus === 'inactive' ? 'selected' : '' ?>><?= lang('App.admin_inactive_status') ?></option>
         </select>
 
@@ -127,12 +128,36 @@
                     </td>
 
                     <td class="px-4 py-3 text-center">
+                        <?php
+                            $st = $b['status'] ?? 'active';
+                            $badgeClass = $st === 'active'
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                : ($st === 'pending'
+                                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                    : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400');
+                        ?>
+                        <?php if ($st === 'pending'): ?>
+                            <form action="<?= base_url('admin/app-users/business/' . $b['id'] . '/approve') ?>" method="POST" class="inline">
+                                <?= csrf_field() ?>
+                                <button type="submit" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider <?= $badgeClass ?>" title="Approve listing">
+                                    pending · approve
+                                </button>
+                            </form>
+                        <?php else: ?>
                         <form action="<?= base_url('admin/businesses/toggle/' . $b['id']) ?>" method="POST" class="inline">
                             <?= csrf_field() ?>
-                            <button type="submit" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider rtl:tracking-normal <?= ($b['status'] ?? 'active') === 'active' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400' ?>">
-                                <?= esc($b['status'] ?? 'active') ?>
+                            <button type="submit" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider rtl:tracking-normal <?= $badgeClass ?>">
+                                <?= esc($st) ?>
                             </button>
                         </form>
+                        <?php endif; ?>
+                        <?php if (!empty($b['user_id'])): ?>
+                            <div class="mt-1">
+                                <a href="<?= base_url('admin/app-users/' . (int) $b['user_id']) ?>" class="text-[10px] text-emerald-600 font-bold hover:underline">
+                                    App owner #<?= (int) $b['user_id'] ?>
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </td>
 
                     <td class="px-4 py-3 text-right rtl:text-left">

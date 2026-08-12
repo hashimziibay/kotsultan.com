@@ -22,7 +22,15 @@ class WallController extends BaseController
                              ->join('wall_categories', 'wall_categories.id = wall_of_kot_sultan.category_id', 'left');
 
         if (!empty($category)) {
-            $builder->where('wall_of_kot_sultan.category_id', $category);
+            $catId = (int) $category;
+            $builder->groupStart()
+                ->where('wall_of_kot_sultan.category_id', $catId)
+                ->orWhere(
+                    "wall_of_kot_sultan.id IN (SELECT wall_id FROM wall_entry_categories WHERE category_id = {$catId})",
+                    null,
+                    false
+                )
+                ->groupEnd();
         }
 
         if (!empty($query)) {
@@ -38,11 +46,29 @@ class WallController extends BaseController
                          ->orderBy('wall_of_kot_sultan.display_order', 'ASC')
                          ->findAll();
 
+        $allCategories = $wallCategoryModel->orderBy('display_order', 'ASC')->findAll();
+        $catMap = [];
+        foreach ($allCategories as $c) {
+            $catMap[(int) $c['id']] = $c['name_en'] ?: $c['name_ur'];
+        }
+        foreach ($items as &$item) {
+            $ids = $wallModel->getCategoryIdsForWall((int) $item['id']);
+            if ($ids === [] && ! empty($item['category_id'])) {
+                $ids = [(int) $item['category_id']];
+            }
+            $item['category_ids'] = $ids;
+            $item['category_labels'] = array_values(array_filter(array_map(
+                static fn ($id) => $catMap[(int) $id] ?? null,
+                $ids
+            )));
+        }
+        unset($item);
+
         return view('admin/wall/index', [
             'title'            => lang('App.admin_page_wall_management'),
             'pageHeading'      => 'Wall Personalities & Legends',
             'personalities'    => $items,
-            'categories'       => $wallCategoryModel->orderBy('display_order', 'ASC')->findAll(),
+            'categories'       => $allCategories,
             'query'            => $query,
             'selectedCategory' => $category,
         ]);
@@ -58,24 +84,29 @@ class WallController extends BaseController
             'person'      => null,
             'attachments' => [],
             'categories'  => $wallCategoryModel->orderBy('display_order', 'ASC')->findAll(),
+            'selectedCategoryIds' => [],
         ]);
     }
 
     public function store()
     {
         $rules = [
-            'name_en'     => 'required|min_length[2]',
-            'category_id' => 'required|numeric',
+            'name_en' => 'required|min_length[2]',
         ];
 
         if (!$this->validate($rules)) {
             return redirect()->back()->withInput()->with('error', implode(' ', $this->validator->getErrors()));
         }
 
+        $categoryIds = $this->parseCategoryIdsFromRequest();
+        if ($categoryIds === []) {
+            return redirect()->back()->withInput()->with('error', lang('App.admin_select_category') ?: 'Select at least one category');
+        }
+
         $photoPath = $this->handlePhotoUpload();
 
         $data = [
-            'category_id'      => (int) $this->request->getPost('category_id'),
+            'category_id'      => $categoryIds[0],
             'name_en'          => trim((string) $this->request->getPost('name_en')),
             'name_ur'          => trim((string) $this->request->getPost('name_ur')) ?: trim((string) $this->request->getPost('name_en')),
             'profession_en'    => trim((string) $this->request->getPost('profession_en')),
@@ -102,6 +133,8 @@ class WallController extends BaseController
         if ($id < 1) {
             return redirect()->back()->withInput()->with('error', lang('App.admin_msg_personality_not_found'));
         }
+
+        $wallModel->syncCategories($id, $categoryIds);
 
         $uploadResult = $this->handleAttachmentsUpload($id);
         $uploaded     = (int) ($uploadResult['saved'] ?? 0);
@@ -152,6 +185,9 @@ class WallController extends BaseController
             'person'      => $person,
             'attachments' => $attachments,
             'categories'  => $wallCategoryModel->orderBy('display_order', 'ASC')->findAll(),
+            'selectedCategoryIds' => $wallModel->getCategoryIdsForWall((int) $id) ?: (
+                ! empty($person['category_id']) ? [(int) $person['category_id']] : []
+            ),
         ]);
     }
 
@@ -165,12 +201,16 @@ class WallController extends BaseController
         }
 
         $rules = [
-            'name_en'     => 'required|min_length[2]',
-            'category_id' => 'required|numeric',
+            'name_en' => 'required|min_length[2]',
         ];
 
         if (!$this->validate($rules)) {
             return redirect()->back()->withInput()->with('error', implode(' ', $this->validator->getErrors()));
+        }
+
+        $categoryIds = $this->parseCategoryIdsFromRequest();
+        if ($categoryIds === []) {
+            return redirect()->back()->withInput()->with('error', lang('App.admin_select_category') ?: 'Select at least one category');
         }
 
         $photoPath = $this->handlePhotoUpload();
@@ -179,7 +219,7 @@ class WallController extends BaseController
         }
 
         $data = [
-            'category_id'      => (int) $this->request->getPost('category_id'),
+            'category_id'      => $categoryIds[0],
             'name_en'          => trim((string) $this->request->getPost('name_en')),
             'name_ur'          => trim((string) $this->request->getPost('name_ur')),
             'profession_en'    => trim((string) $this->request->getPost('profession_en')),
@@ -201,6 +241,7 @@ class WallController extends BaseController
         $this->applyExternalLinksField($data);
 
         $wallModel->update($id, $data);
+        $wallModel->syncCategories((int) $id, $categoryIds);
 
         $uploadResult = $this->handleAttachmentsUpload((int) $id);
         $uploaded     = (int) ($uploadResult['saved'] ?? 0);
@@ -501,6 +542,29 @@ class WallController extends BaseController
     public static function decodeExternalLinks(?string $json): array
     {
         return WallModel::decodeExternalLinks($json);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function parseCategoryIdsFromRequest(): array
+    {
+        $raw = $this->request->getPost('category_ids');
+        if (! is_array($raw)) {
+            // Backward compatible single select
+            $single = (int) $this->request->getPost('category_id');
+            return $single > 0 ? [$single] : [];
+        }
+
+        $ids = [];
+        foreach ($raw as $v) {
+            $id = (int) $v;
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 
     private function deleteAttachmentFile(array $attachment): void

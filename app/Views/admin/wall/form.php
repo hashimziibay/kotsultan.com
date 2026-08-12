@@ -18,16 +18,38 @@
             <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider rtl:tracking-normal text-emerald-600 dark:text-emerald-400"><?= lang('App.admin_wall_section_1') ?></h3>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1"><?= lang('App.admin_category_label') ?></label>
-                    <select name="category_id" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
-                        <option value=""><?= lang('App.admin_select_category') ?></option>
-                        <?php foreach ($categories as $c): ?>
-                        <option value="<?= $c['id'] ?>" <?= ($person['category_id'] ?? '') == $c['id'] ? 'selected' : '' ?>>
-                            <?= esc($c['name_en'] ?: $c['name_ur']) ?>
-                        </option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="md:col-span-1">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        <?= lang('App.admin_category_label') ?>
+                    </label>
+                    <?php
+                        $selectedIds = $selectedCategoryIds ?? [];
+                        if ($selectedIds === [] && ! empty($person['category_id'])) {
+                            $selectedIds = [(int) $person['category_id']];
+                        }
+                        $oldIds = old('category_ids');
+                        if (is_array($oldIds)) {
+                            $selectedIds = array_map('intval', $oldIds);
+                        }
+                        $categoryOptions = [];
+                        foreach ($categories ?? [] as $c) {
+                            $categoryOptions[] = [
+                                'id'        => (int) $c['id'],
+                                'label'     => trim(($c['name_en'] ?? '') !== '' ? $c['name_en'] : ($c['name_ur'] ?? '')),
+                                'label_alt' => trim(($c['name_ur'] ?? '') . ' ' . ($c['name_en'] ?? '')),
+                            ];
+                        }
+                    ?>
+                    <?= view('components/searchable_multi_select', [
+                        'name'              => 'category_ids',
+                        'options'           => $categoryOptions,
+                        'selected'          => $selectedIds,
+                        'required'          => true,
+                        'placeholder'       => lang('App.admin_select_category'),
+                        'searchPlaceholder' => lang('App.search_category') ?: 'Search category…',
+                        'inputClass'        => 'w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium',
+                    ]) ?>
+                    <p class="mt-1 text-[10px] text-slate-400"><?= lang('App.admin_wall_categories_hint') ?: 'Select one or more categories. The first selected is the primary category.' ?></p>
                 </div>
 
                 <div>
@@ -110,7 +132,7 @@
                         <div class="mb-3 flex items-center gap-3">
                             <img src="<?= esc($currentPhotoUrl) ?>"
                                  alt="Current photo"
-                                 class="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+                                 class="w-20 h-20 rounded-xl object-contain bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                                  onerror="this.style.display='none'">
                             <div class="text-[11px] text-slate-500">
                                 <p class="font-bold text-slate-700 dark:text-slate-300"><?= lang('App.admin_current_photo') ?? 'Current profile photo' ?></p>

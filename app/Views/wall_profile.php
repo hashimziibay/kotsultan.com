@@ -20,10 +20,10 @@
         <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8 shadow-xl flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start">
             
             <!-- Personality Image -->
-            <div class="relative w-40 h-40 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border-4 border-emerald-500/20 shrink-0 shadow-lg">
+            <div class="relative w-40 h-40 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border-4 border-emerald-500/20 shrink-0 shadow-lg bg-slate-100 dark:bg-slate-700/60 flex items-center justify-center">
                 <img src="<?= esc($item['photo_url']) ?>" 
                      alt="<?= esc($item['display_name']) ?>" 
-                     class="w-full h-full object-cover"
+                     class="w-full h-full object-contain"
                      onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'">
             </div>
 
@@ -242,8 +242,8 @@
                 <?php foreach ($related as $rel): ?>
                     <a href="<?= esc($rel['url']) ?>" class="group bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/80 p-4 shadow-xs hover:shadow-lg transition-all flex items-center gap-4">
                         <img src="<?= esc($rel['photo_url']) ?>" 
-                             alt="<?= esc($rel['display_name']) ?>" 
-                             class="w-14 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0 group-hover:scale-105 transition-transform"
+                             alt="<?= esc($rel['display_name']) ?>"
+                             class="w-14 h-14 rounded-xl object-contain bg-slate-100 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-700 shrink-0"
                              onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'">
                         <div class="min-w-0">
                             <h4 class="text-sm font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors truncate">

@@ -16,15 +16,18 @@ class AppUser {
     required this.phone,
     required this.locale,
     required this.theme,
+    this.accountType = 'user',
   });
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
+    final type = '${json['account_type'] ?? ((json['is_business'] == true) ? 'business' : 'user')}';
     return AppUser(
       id: json['id'] is int ? json['id'] as int : int.tryParse('${json['id']}') ?? 0,
       name: '${json['name'] ?? ''}',
       phone: '${json['phone'] ?? ''}',
       locale: '${json['locale'] ?? 'en'}',
       theme: '${json['theme'] ?? 'light'}',
+      accountType: type == 'business' ? 'business' : 'user',
     );
   }
 
@@ -33,6 +36,9 @@ class AppUser {
   final String phone;
   final String locale;
   final String theme;
+  final String accountType;
+
+  bool get isBusiness => accountType == 'business';
 
   AppUser copyWith({
     int? id,
@@ -40,6 +46,7 @@ class AppUser {
     String? phone,
     String? locale,
     String? theme,
+    String? accountType,
   }) {
     return AppUser(
       id: id ?? this.id,
@@ -47,6 +54,7 @@ class AppUser {
       phone: phone ?? this.phone,
       locale: locale ?? this.locale,
       theme: theme ?? this.theme,
+      accountType: accountType ?? this.accountType,
     );
   }
 }
@@ -102,6 +110,7 @@ class AppState extends ChangeNotifier {
         phone: phone,
         locale: locale,
         theme: theme,
+        accountType: prefs.getString(AppConstants.prefAccountType) ?? 'user',
       );
     }
 
@@ -193,20 +202,46 @@ class AppState extends ChangeNotifier {
   }
 
   /// First-time setup: save locally and register with admin when online.
-  /// App stays usable even if registration fails (no internet).
+  /// App stays usable even if registration fails (no internet) — except business
+  /// accounts, which need a password sync and must succeed online.
   Future<void> completeOnboarding({
     required String name,
     required String phone,
     required String localeCode,
     required String theme,
+    String accountType = 'user',
+    String? password,
   }) async {
     error = null;
     notifyListeners();
 
+    final type = accountType == 'business' ? 'business' : 'user';
     locale = localeCode;
     api.locale = localeCode;
     themeMode = theme == 'dark' ? ThemeMode.dark : ThemeMode.light;
-    user = AppUser(id: 0, name: name, phone: phone, locale: localeCode, theme: theme);
+
+    if (type == 'business') {
+      final synced = await _registerWithServer(
+        name: name,
+        phone: phone,
+        localeCode: localeCode,
+        theme: theme,
+        accountType: type,
+        password: password,
+      );
+      if (!synced) {
+        throw Exception(error ?? 'Could not create business account. Check internet and try again.');
+      }
+      onboarded = true;
+      pendingUserSync = false;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(AppConstants.prefOnboarded, true);
+      await prefs.setBool(AppConstants.prefPendingUserSync, false);
+      notifyListeners();
+      return;
+    }
+
+    user = AppUser(id: 0, name: name, phone: phone, locale: localeCode, theme: theme, accountType: type);
     onboarded = true;
 
     final prefs = await SharedPreferences.getInstance();
@@ -218,6 +253,8 @@ class AppState extends ChangeNotifier {
       phone: phone,
       localeCode: localeCode,
       theme: theme,
+      accountType: type,
+      password: password,
     );
     pendingUserSync = !synced;
     await prefs.setBool(AppConstants.prefPendingUserSync, pendingUserSync);
@@ -231,6 +268,7 @@ class AppState extends ChangeNotifier {
       phone: user!.phone,
       localeCode: user!.locale,
       theme: user!.theme,
+      accountType: user!.accountType,
     );
     if (synced) {
       pendingUserSync = false;
@@ -241,19 +279,62 @@ class AppState extends ChangeNotifier {
     return synced;
   }
 
+  Future<bool> loginBusiness({
+    required String phone,
+    required String password,
+  }) async {
+    error = null;
+    notifyListeners();
+    try {
+      final res = await api.post('auth/login', body: {
+        'phone': phone,
+        'password': password,
+      });
+      final data = res['data'] as Map<String, dynamic>;
+      api.token = data['token'] as String?;
+      user = AppUser.fromJson(data['user'] as Map<String, dynamic>);
+      locale = user!.locale;
+      api.locale = locale;
+      themeMode = user!.theme == 'dark' ? ThemeMode.dark : ThemeMode.light;
+      onboarded = true;
+      pendingUserSync = false;
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(AppConstants.prefOnboarded, true);
+      await prefs.setBool(AppConstants.prefPendingUserSync, false);
+      await prefs.setString(AppConstants.prefToken, api.token ?? '');
+      await _persistUser(user!);
+      // ignore: unawaited_futures
+      refreshOfflineCache();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> _registerWithServer({
     required String name,
     required String phone,
     required String localeCode,
     required String theme,
+    String accountType = 'user',
+    String? password,
   }) async {
     try {
-      final res = await api.post('auth/register', body: {
+      final body = <String, dynamic>{
         'name': name,
         'phone': phone,
         'locale': localeCode,
         'theme': theme,
-      });
+        'account_type': accountType,
+      };
+      if (accountType == 'business' && password != null && password.isNotEmpty) {
+        body['password'] = password;
+      }
+      final res = await api.post('auth/register', body: body);
       final data = res['data'] as Map<String, dynamic>;
       api.token = data['token'] as String?;
       user = AppUser.fromJson(data['user'] as Map<String, dynamic>);
@@ -320,6 +401,7 @@ class AppState extends ChangeNotifier {
           phone: next.phone,
           localeCode: next.locale,
           theme: next.theme,
+          accountType: next.accountType,
         );
         pendingUserSync = !synced;
       }
@@ -357,6 +439,7 @@ class AppState extends ChangeNotifier {
     await prefs.setString(AppConstants.prefPhone, u.phone);
     await prefs.setString(AppConstants.prefLocale, u.locale);
     await prefs.setString(AppConstants.prefTheme, u.theme);
+    await prefs.setString(AppConstants.prefAccountType, u.accountType);
   }
 
   String t({required String en, required String ur}) => isUrdu ? ur : en;

@@ -89,6 +89,12 @@
                         <span><?= lang('App.admin_businesses') ?></span>
                     </a>
 
+                    <a href="<?= base_url('admin/app-users') ?>" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors <?= $currentSegment === 'app-users' ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white' ?>">
+                        <i data-lucide="smartphone" class="w-4 h-4"></i>
+                        <span>App Users</span>
+                    </a>
+
                     <a href="<?= base_url('admin/duplicates') ?>" 
                        class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors <?= $currentSegment === 'duplicates' ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white' ?>">
                         <i data-lucide="copy" class="w-4 h-4"></i>

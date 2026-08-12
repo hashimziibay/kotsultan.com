@@ -21,9 +21,23 @@ $routes->get('/listing', 'Home::directory');
 $routes->get('/emergency-numbers', 'Home::emergency');
 $routes->get('/emergency', 'Home::emergency'); // Alias
 
-$routes->get('/login', 'Home::login');
-$routes->get('/signup', 'Home::signup');
-$routes->get('/dashboard', 'Home::dashboard');
+$routes->get('/login', 'AccountController::login');
+$routes->post('/login', 'AccountController::attemptLogin');
+$routes->get('/signup', 'AccountController::signup');
+$routes->post('/signup', 'AccountController::attemptSignup');
+$routes->get('/logout', 'AccountController::logout');
+$routes->get('/add-business', 'AccountController::addBusinessGate');
+$routes->post('/add-business/check', 'AccountController::checkAddBusinessPhone');
+
+$routes->group('', ['filter' => 'appUserAuth'], static function ($routes) {
+    $routes->get('/dashboard', 'AccountController::dashboard');
+    $routes->post('/dashboard/profile', 'AccountController::updateProfile');
+    $routes->get('/dashboard/business/create', 'AccountController::businessCreate');
+    $routes->post('/dashboard/business/create', 'AccountController::businessStore');
+    $routes->get('/dashboard/business/edit/(:num)', 'AccountController::businessEdit/$1');
+    $routes->post('/dashboard/business/edit/(:num)', 'AccountController::businessUpdate/$1');
+});
+
 $routes->get('/lang/(:segment)', 'Home::lang/$1');
 $routes->get('/404', 'Home::not_found');
 
@@ -47,6 +61,12 @@ $routes->group('admin', ['filter' => 'adminAuth'], static function ($routes) {
     $routes->post('businesses/edit/(:num)', 'Admin\BusinessController::update/$1');
     $routes->post('businesses/delete/(:num)', 'Admin\BusinessController::delete/$1');
     $routes->post('businesses/toggle/(:num)', 'Admin\BusinessController::toggle/$1');
+
+    // App users / business accounts
+    $routes->get('app-users', 'Admin\AppUsersController::index');
+    $routes->get('app-users/(:num)', 'Admin\AppUsersController::show/$1');
+    $routes->post('app-users/(:num)/toggle', 'Admin\AppUsersController::toggle/$1');
+    $routes->post('app-users/business/(:num)/approve', 'Admin\AppUsersController::approveBusiness/$1');
 
     // Duplicates
     $routes->get('duplicates', 'Admin\DuplicateController::index');
@@ -145,6 +165,12 @@ $routes->group('api', ['namespace' => 'App\Controllers\Api'], static function ($
     $routes->get('auth/me', 'AuthController::me', ['filter' => 'apiAuth']);
     $routes->put('auth/me', 'AuthController::updateMe', ['filter' => 'apiAuth']);
     $routes->post('auth/me', 'AuthController::updateMe', ['filter' => 'apiAuth']); // Android/proxy fallback
+
+    $routes->get('my-businesses', 'MyBusinessController::index', ['filter' => 'apiAuth']);
+    $routes->post('my-businesses', 'MyBusinessController::store', ['filter' => 'apiAuth']);
+    $routes->get('my-businesses/(:num)', 'MyBusinessController::show/$1', ['filter' => 'apiAuth']);
+    $routes->put('my-businesses/(:num)', 'MyBusinessController::update/$1', ['filter' => 'apiAuth']);
+    $routes->post('my-businesses/(:num)', 'MyBusinessController::update/$1', ['filter' => 'apiAuth']);
 
     $routes->get('home', 'HomeController::index');
     $routes->get('categories', 'BusinessController::categories');

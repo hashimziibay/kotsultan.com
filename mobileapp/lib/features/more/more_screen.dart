@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../business/my_business_list_screen.dart';
 import '../profile/profile_screen.dart';
 import '../shell/app_drawer.dart';
 import 'about_screen.dart';
@@ -32,6 +33,21 @@ class MoreScreen extends StatelessWidget {
                 subtitle: app.t(en: 'Name, phone, language, theme', ur: 'نام، نمبر، زبان، تھیم'),
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
               ),
+              if (app.user?.isBusiness == true) ...[
+                const Divider(height: 1),
+                _MenuTile(
+                  icon: Icons.storefront_outlined,
+                  color: AppColors.amber,
+                  title: app.t(en: 'My Business', ur: 'میرا کاروبار'),
+                  subtitle: app.t(
+                    en: 'Add or update your shop listing',
+                    ur: 'اپنا کاروبار شامل یا اپڈیٹ کریں',
+                  ),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MyBusinessListScreen()),
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 18),

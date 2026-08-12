@@ -47,17 +47,36 @@ class WallModel extends Model
                         ->join('wall_categories', 'wall_categories.id = wall_of_kot_sultan.category_id', 'left')
                         ->where('wall_of_kot_sultan.status', 'active');
 
-        // Category filter
+        // Category filter — match primary OR any linked pivot category
         if (!empty($category) && $category !== 'all') {
-            $builder->groupStart()
-                ->where('wall_categories.id', $category)
-                ->orWhere('wall_categories.slug', $category);
-            if ($isUrdu) {
-                $builder->orWhere('wall_categories.name_ur', $category);
+            $catId = null;
+            if (is_numeric($category)) {
+                $catId = (int) $category;
             } else {
-                $builder->orWhere('wall_categories.name_en', $category);
+                $catRow = $this->db->table('wall_categories')
+                    ->groupStart()
+                        ->where('slug', $category)
+                        ->orWhere('name_en', $category)
+                        ->orWhere('name_ur', $category)
+                    ->groupEnd()
+                    ->get()
+                    ->getRowArray();
+                $catId = $catRow ? (int) $catRow['id'] : null;
             }
-            $builder->groupEnd();
+
+            if ($catId) {
+                $builder->groupStart()
+                    ->where('wall_of_kot_sultan.category_id', $catId)
+                    ->orWhere(
+                        "wall_of_kot_sultan.id IN (SELECT wall_id FROM wall_entry_categories WHERE category_id = " . (int) $catId . ")",
+                        null,
+                        false
+                    )
+                    ->groupEnd();
+            } else {
+                // No matching category — return empty
+                $builder->where('1 = 0', null, false);
+            }
         }
 
         // Live search filter strictly based on locale
@@ -107,7 +126,7 @@ class WallModel extends Model
 
         if ($perPage === null) {
             $rows = $builder->findAll();
-            return $this->localizedRows($rows, $isUrdu);
+            return $this->attachCategoriesToRows($this->localizedRows($rows, $isUrdu), $isUrdu);
         }
 
         $page = max(1, (int)$page);
@@ -117,7 +136,7 @@ class WallModel extends Model
         $rows = $builder->limit($perPage, $offset)->findAll();
 
         return [
-            'entries'    => $this->localizedRows($rows, $isUrdu),
+            'entries'    => $this->attachCategoriesToRows($this->localizedRows($rows, $isUrdu), $isUrdu),
             'total'      => $total,
             'page'       => $page,
             'perPage'    => $perPage,
@@ -153,26 +172,52 @@ class WallModel extends Model
         $this->where('id', $row['id'])->increment('views', 1);
 
         $isUrdu = ($this->locale() === 'ur');
-        return $this->localizedRow($row, $isUrdu);
+        $localized = $this->localizedRow($row, $isUrdu);
+        $withCats = $this->attachCategoriesToRows([$localized], $isUrdu);
+
+        return $withCats[0] ?? $localized;
     }
 
     public function getRelatedPersonalities($categoryId, $currentId, $limit = 3): array
     {
         $isUrdu = ($this->locale() === 'ur');
+        $currentId = (int) $currentId;
+        $categoryIds = [];
+
+        if (is_array($categoryId)) {
+            $categoryIds = array_values(array_filter(array_map('intval', $categoryId)));
+        } elseif (! empty($categoryId)) {
+            $categoryIds = [(int) $categoryId];
+        }
+
+        // Prefer all categories linked to the current personality
+        $linked = $this->getCategoryIdsForWall($currentId);
+        if ($linked !== []) {
+            $categoryIds = array_values(array_unique(array_merge($categoryIds, $linked)));
+        }
+
         $builder = $this->select('wall_of_kot_sultan.*, wall_categories.name_en as category_name_en, wall_categories.name_ur as category_name_ur, wall_categories.icon as category_icon')
                         ->join('wall_categories', 'wall_categories.id = wall_of_kot_sultan.category_id', 'left')
                         ->where('wall_of_kot_sultan.status', 'active')
                         ->where('wall_of_kot_sultan.id !=', $currentId);
 
-        if (!empty($categoryId)) {
-            $builder->where('wall_of_kot_sultan.category_id', $categoryId);
+        if ($categoryIds !== []) {
+            $idsList = implode(',', array_map('intval', $categoryIds));
+            $builder->groupStart()
+                ->whereIn('wall_of_kot_sultan.category_id', $categoryIds)
+                ->orWhere(
+                    "wall_of_kot_sultan.id IN (SELECT wall_id FROM wall_entry_categories WHERE category_id IN ({$idsList}))",
+                    null,
+                    false
+                )
+                ->groupEnd();
         }
 
         $rows = $builder->orderBy('wall_of_kot_sultan.featured', 'DESC')
                         ->orderBy('wall_of_kot_sultan.display_order', 'ASC')
                         ->findAll($limit);
 
-        return $this->localizedRows($rows, $isUrdu);
+        return $this->attachCategoriesToRows($this->localizedRows($rows, $isUrdu), $isUrdu);
     }
 
     public function getActiveWallEntries()
@@ -184,7 +229,137 @@ class WallModel extends Model
                         ->orderBy('wall_of_kot_sultan.display_order', 'ASC')
                         ->orderBy('wall_of_kot_sultan.created_at', 'DESC')
                         ->findAll();
-        return $this->localizedRows($entries, $isUrdu);
+        return $this->attachCategoriesToRows($this->localizedRows($entries, $isUrdu), $isUrdu);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function getCategoryIdsForWall(int $wallId): array
+    {
+        if ($wallId < 1 || ! $this->db->tableExists('wall_entry_categories')) {
+            return [];
+        }
+        $rows = $this->db->table('wall_entry_categories')
+            ->select('category_id')
+            ->where('wall_id', $wallId)
+            ->get()
+            ->getResultArray();
+
+        return array_values(array_unique(array_map(static fn ($r) => (int) $r['category_id'], $rows)));
+    }
+
+    /**
+     * Replace pivot rows and keep wall_of_kot_sultan.category_id as primary (first).
+     *
+     * @param list<int> $categoryIds
+     */
+    public function syncCategories(int $wallId, array $categoryIds): void
+    {
+        $categoryIds = array_values(array_unique(array_filter(array_map('intval', $categoryIds), static fn ($id) => $id > 0)));
+        if ($wallId < 1) {
+            return;
+        }
+
+        if ($this->db->tableExists('wall_entry_categories')) {
+            $this->db->table('wall_entry_categories')->where('wall_id', $wallId)->delete();
+            foreach ($categoryIds as $cid) {
+                $this->db->table('wall_entry_categories')->insert([
+                    'wall_id'     => $wallId,
+                    'category_id' => $cid,
+                ]);
+            }
+        }
+
+        $primary = $categoryIds[0] ?? null;
+        $this->update($wallId, ['category_id' => $primary]);
+    }
+
+    /**
+     * @param list<array<string,mixed>> $rows
+     * @return list<array<string,mixed>>
+     */
+    private function attachCategoriesToRows(array $rows, bool $isUrdu): array
+    {
+        if ($rows === [] || ! $this->db->tableExists('wall_entry_categories')) {
+            foreach ($rows as &$row) {
+                $row['categories'] = $this->fallbackCategoriesFromPrimary($row, $isUrdu);
+                $row['category_ids'] = array_map(static fn ($c) => (int) $c['id'], $row['categories']);
+            }
+            unset($row);
+            return $rows;
+        }
+
+        $ids = array_values(array_filter(array_map(static fn ($r) => (int) ($r['id'] ?? 0), $rows)));
+        if ($ids === []) {
+            return $rows;
+        }
+
+        $pivot = $this->db->table('wall_entry_categories wec')
+            ->select('wec.wall_id, wc.id, wc.slug, wc.name_en, wc.name_ur, wc.icon, wc.color')
+            ->join('wall_categories wc', 'wc.id = wec.category_id', 'inner')
+            ->whereIn('wec.wall_id', $ids)
+            ->orderBy('wc.display_order', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $byWall = [];
+        foreach ($pivot as $p) {
+            $wid = (int) $p['wall_id'];
+            $byWall[$wid][] = [
+                'id'    => (int) $p['id'],
+                'slug'  => $p['slug'] ?? null,
+                'name'  => $isUrdu
+                    ? trim((string) ($p['name_ur'] ?? ''))
+                    : trim((string) ($p['name_en'] ?? '')),
+                'name_en' => $p['name_en'] ?? '',
+                'name_ur' => $p['name_ur'] ?? '',
+                'icon'  => $p['icon'] ?? 'user',
+                'color' => $p['color'] ?? null,
+            ];
+        }
+
+        foreach ($rows as &$row) {
+            $wid = (int) ($row['id'] ?? 0);
+            $cats = $byWall[$wid] ?? [];
+            if ($cats === []) {
+                $cats = $this->fallbackCategoriesFromPrimary($row, $isUrdu);
+            }
+            $row['categories'] = $cats;
+            $row['category_ids'] = array_map(static fn ($c) => (int) $c['id'], $cats);
+            // Prefer joined display labels when multiple: comma-separated
+            if (count($cats) > 1) {
+                $row['display_category'] = implode(', ', array_map(static fn ($c) => $c['name'], $cats));
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    /**
+     * @param array<string,mixed> $row
+     * @return list<array<string,mixed>>
+     */
+    private function fallbackCategoriesFromPrimary(array $row, bool $isUrdu): array
+    {
+        $cid = (int) ($row['category_id'] ?? 0);
+        if ($cid < 1) {
+            return [];
+        }
+        $name = $isUrdu
+            ? trim((string) ($row['category_name_ur'] ?? $row['display_category'] ?? ''))
+            : trim((string) ($row['category_name_en'] ?? $row['display_category'] ?? ''));
+
+        return [[
+            'id'      => $cid,
+            'slug'    => $row['category_slug'] ?? null,
+            'name'    => $name,
+            'name_en' => $row['category_name_en'] ?? '',
+            'name_ur' => $row['category_name_ur'] ?? '',
+            'icon'    => $row['category_icon'] ?? 'user',
+            'color'   => $row['category_color'] ?? null,
+        ]];
     }
 
     private function locale(): string

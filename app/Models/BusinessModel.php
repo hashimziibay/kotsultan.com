@@ -11,6 +11,7 @@ class BusinessModel extends Model
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
     protected $allowedFields    = [
+        'user_id',
         'category_id',
         'area_id',
         'village_id',
@@ -42,6 +43,23 @@ class BusinessModel extends Model
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
+
+    /**
+     * One mobile/business account may own at most one listing.
+     */
+    public function findOwnedByUser(int $userId): ?array
+    {
+        if ($userId < 1) {
+            return null;
+        }
+        $row = $this->where('user_id', $userId)->orderBy('id', 'ASC')->first();
+        return $row ?: null;
+    }
+
+    public function userHasBusiness(int $userId): bool
+    {
+        return $this->findOwnedByUser($userId) !== null;
+    }
 
     public function getRecentBusinesses($limit = 6)
     {

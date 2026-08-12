@@ -340,16 +340,21 @@ class _WallDetailScreenState extends State<WallDetailScreen> {
                   padding: const EdgeInsets.all(16),
                   children: [
                     Center(
-                      child: ClipOval(
-                        child: SizedBox(
-                          width: 112,
-                          height: 112,
-                          child: photo.isNotEmpty
-                              ? AppNetworkImage(url: photo, placeholderIcon: Icons.person_rounded)
-                              : Container(
-                                  color: AppColors.tealSoft,
-                                  child: const Icon(Icons.person_rounded, size: 48, color: AppColors.emerald),
-                                ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: ColoredBox(
+                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                          child: SizedBox(
+                            width: 160,
+                            height: 160,
+                            child: photo.isNotEmpty
+                                ? AppNetworkImage(
+                                    url: photo,
+                                    fit: BoxFit.contain,
+                                    placeholderIcon: Icons.person_rounded,
+                                  )
+                                : const Icon(Icons.person_rounded, size: 48, color: AppColors.emerald),
+                          ),
                         ),
                       ),
                     ),

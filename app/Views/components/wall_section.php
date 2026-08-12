@@ -45,7 +45,7 @@ $displayEntries = ($mode === 'preview') ? array_slice($wallEntries ?? [], 0, 6) 
                         <div class="relative mb-6">
                             <img src="<?= !empty($person['photo']) ? esc($person['photo']) : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300' ?>" 
                                  alt="<?= esc($person['display_name']) ?>" 
-                                 class="w-28 h-28 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-md">
+                                 class="w-28 h-28 rounded-full object-contain bg-slate-100 dark:bg-slate-700 border-4 border-white dark:border-slate-700 shadow-md">
                             <span class="absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs shadow-xs">
                                 <i data-lucide="check" class="w-4 h-4"></i>
                             </span>
@@ -100,7 +100,7 @@ $displayEntries = ($mode === 'preview') ? array_slice($wallEntries ?? [], 0, 6) 
                     <div class="relative mb-6">
                         <img src="<?= !empty($person['photo']) ? esc($person['photo']) : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300' ?>" 
                              alt="<?= esc($person['display_name']) ?>" 
-                             class="w-28 h-28 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-md">
+                             class="w-28 h-28 rounded-full object-contain bg-slate-100 dark:bg-slate-700 border-4 border-white dark:border-slate-700 shadow-md">
                         <span class="absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs shadow-xs">
                             <i data-lucide="check" class="w-4 h-4"></i>
                         </span>

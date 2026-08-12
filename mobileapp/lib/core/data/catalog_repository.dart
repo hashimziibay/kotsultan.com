@@ -432,7 +432,17 @@ class CatalogRepository {
         final idMatch = '${p['category_id']}'.toLowerCase() == cat;
         final slugMatch = '${p['category_slug'] ?? ''}'.toLowerCase() == cat;
         final nameMatch = '${p['category'] ?? ''}'.toLowerCase() == cat;
-        if (!idMatch && !slugMatch && !nameMatch) return false;
+        final cats = (p['categories'] as List?) ?? const [];
+        final multiMatch = cats.any((raw) {
+          if (raw is! Map) return false;
+          final c = Map<String, dynamic>.from(raw);
+          return '${c['id']}'.toLowerCase() == cat ||
+              '${c['slug'] ?? ''}'.toLowerCase() == cat ||
+              '${c['name'] ?? ''}'.toLowerCase() == cat ||
+              '${c['name_en'] ?? ''}'.toLowerCase() == cat ||
+              '${c['name_ur'] ?? ''}'.toLowerCase() == cat;
+        });
+        if (!idMatch && !slugMatch && !nameMatch && !multiMatch) return false;
       }
       if (query.isEmpty) return true;
       final hay = [

@@ -72,6 +72,39 @@
         </div>
         <?php endif; ?>
 
+        <?php
+            $appLoggedIn = (bool) session()->get('app_user_logged_in');
+            $appIsBusiness = session()->get('app_user_type') === 'business';
+            $ownedBiz = null;
+            $addBizUrl = base_url('add-business');
+            $addBizLabel = lang('App.list_your_business');
+            $addBizHint = lang('App.list_your_business_hint');
+            if ($appLoggedIn && $appIsBusiness) {
+                $ownedBiz = (new \App\Models\BusinessModel())->findOwnedByUser((int) session()->get('app_user_id'));
+                if ($ownedBiz) {
+                    $addBizUrl = base_url('dashboard?tab=business');
+                    $addBizLabel = lang('App.dashboard_my_business_listing');
+                    $addBizHint = lang('App.one_business_per_account');
+                } else {
+                    $addBizUrl = base_url('dashboard/business/create');
+                }
+            } elseif ($appLoggedIn) {
+                $addBizUrl = base_url('add-business');
+            }
+        ?>
+        <?php if ($addBizUrl !== ''): ?>
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="<?= $addBizUrl ?>"
+               class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full <?= $ownedBiz ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-amber-500 hover:bg-amber-400' ?> text-white font-bold text-sm shadow-md transition-colors">
+                <i data-lucide="store" class="w-4 h-4"></i>
+                <?= esc($addBizLabel) ?>
+            </a>
+            <span class="text-xs text-slate-500 dark:text-slate-400 max-w-xs text-center">
+                <?= esc($addBizHint) ?>
+            </span>
+        </div>
+        <?php endif; ?>
+
     </div>
 </section>
 

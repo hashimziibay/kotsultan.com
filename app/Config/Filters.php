@@ -37,6 +37,7 @@ class Filters extends BaseFilters
         'adminAuth'     => \App\Filters\AdminAuthFilter::class,
         'locale'        => \App\Filters\LocaleFilter::class,
         'apiAuth'       => \App\Filters\ApiAuthFilter::class,
+        'appUserAuth'   => \App\Filters\AppUserAuthFilter::class,
     ];
 
     /**
