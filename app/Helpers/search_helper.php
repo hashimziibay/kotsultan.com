@@ -3,6 +3,7 @@
 /**
  * Fuzzy / tolerant search helpers for directory + emergency APIs.
  * Supports English, Urdu, Roman-Urdu typos (e.g. "hasptal" → hospital).
+ * Synonym packs live in App\Libraries\SearchSynonyms (all categories).
  */
 
 if (! function_exists('search_term_variants')) {
@@ -20,37 +21,15 @@ if (! function_exists('search_term_variants')) {
 
         $q = mb_strtolower($raw, 'UTF-8');
         $variants = [$raw, $q];
-
-        // Common local misspellings / Roman Urdu ↔ English.
-        $groups = [
-            ['hospital', 'hospitals', 'hasptal', 'haspital', 'haspatal', 'haspataal', 'hospitel', 'haptital', 'hospitaal', 'asptal', 'اسپتال', 'ہسپتال', 'ہسپتال'],
-            ['police', 'polis', 'polise', 'pulice', 'poilce', 'پولیس'],
-            ['rescue', 'riscue', '1122', ' ریسکیو', 'ریسکیو'],
-            ['ambulance', 'ambulence', 'ambulanc', 'امبولینس', 'ایمبولینس'],
-            ['doctor', 'dr', 'dokter', 'docter', 'ڈاکٹر'],
-            ['medical', 'medicel', 'medicle', 'میڈیکل'],
-            ['pharmacy', 'medical store', 'medicle store', 'dawakhana', 'دواخانہ', 'فارمیسی'],
-            ['school', 'scool', 'skool', 'اسکول', 'سکول'],
-            ['college', 'colleg', 'کالج'],
-            ['bank', 'بنک', 'بینک'],
-            ['mosque', 'masjid', 'masjid', 'مسجد'],
-            ['market', 'mandi', 'bazaar', 'bazar', 'مارکیٹ', 'بازار', 'منڈی'],
-            ['electric', 'electricity', 'bijli', 'wadda', 'برق', 'بجلی'],
-            ['gas', 'sui gas', 'گیس'],
-            ['water', 'wasa', 'پانی'],
-            ['nadra', 'نادرا'],
-            ['court', 'kachehri', 'عدالت', 'کچہری'],
-            ['railway', 'railways', 'ریلوے'],
-            ['post office', 'dakkhana', 'ڈاکخانہ'],
-            ['fire', 'fire brigade', 'آگ'],
-            ['helpline', 'help line', 'ہیلپ لائن'],
-            ['admin', 'administration', 'dc office', 'ڈپٹی کمشنر'],
-        ];
+        $groups = \App\Libraries\SearchSynonyms::forSearch();
 
         foreach ($groups as $group) {
             $hit = false;
             foreach ($group as $term) {
                 $t = mb_strtolower($term, 'UTF-8');
+                if ($t === '') {
+                    continue;
+                }
                 if ($q === $t || str_contains($t, $q) || str_contains($q, $t)) {
                     $hit = true;
                     break;
@@ -90,8 +69,8 @@ if (! function_exists('search_term_variants')) {
             return trim((string) $v);
         }, $variants))));
 
-        // Keep SQL OR groups bounded.
-        return array_slice($variants, 0, 18);
+        // Keep SQL OR groups bounded but allow more coverage across categories.
+        return array_slice($variants, 0, 36);
     }
 }
 
