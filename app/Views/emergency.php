@@ -234,31 +234,33 @@
                                 $deptName = $isUrdu ? ($contact['department_name_ur'] ?: $contact['department_name_en']) : ($contact['department_name_en'] ?: $contact['department_name_ur']);
                                 $icon = !empty($contact['icon']) ? $contact['icon'] : 'phone-call';
                             ?>
-                            <div class="p-5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-rose-500 transition-all shadow-sm hover:shadow-md">
+                            <div class="p-5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex flex-col gap-3 group hover:border-rose-500 transition-all shadow-sm hover:shadow-md">
                                 
-                                <div class="flex items-center gap-4 min-w-0">
+                                <div class="flex items-start gap-4 min-w-0">
                                     <div class="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
                                         <i data-lucide="<?= esc($icon) ?>" class="w-6 h-6"></i>
                                     </div>
-                                    <div class="min-w-0">
-                                        <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-tight truncate">
+                                    <div class="min-w-0 flex-1">
+                                        <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-snug break-words whitespace-normal">
                                             <?= esc($deptName) ?>
                                         </h3>
-                                        <span class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 block truncate">
+                                        <?php if (!empty($catName)): ?>
+                                        <span class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 block break-words whitespace-normal">
                                             <?= esc($catName) ?>
                                         </span>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
 
-                                <div class="flex items-center shrink-0">
+                                <div class="ps-0 sm:ps-16">
                                     <?php if (!empty($contact['phone_primary'])): ?>
-                                    <a href="tel:<?= esc(preg_replace('/[^0-9+]/', '', $contact['phone_primary'])) ?>" class="h-10 px-4 inline-flex items-center justify-center gap-2.5 border border-slate-200 dark:border-slate-700 hover:border-rose-500 dark:hover:border-rose-400 text-slate-700 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 rounded-xl text-sm font-semibold transition-colors shrink-0">
-                                        <span dir="ltr" class="font-medium whitespace-nowrap tracking-wide"><?= esc($contact['phone_primary']) ?></span>
+                                    <a href="tel:<?= esc(preg_replace('/[^0-9+]/', '', $contact['phone_primary'])) ?>" class="h-10 px-4 inline-flex items-center justify-center gap-2.5 border border-slate-200 dark:border-slate-700 hover:border-rose-500 dark:hover:border-rose-400 text-slate-700 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 rounded-xl text-sm font-semibold transition-colors">
+                                        <span dir="ltr" class="font-medium tracking-wide"><?= esc($contact['phone_primary']) ?></span>
                                         <i data-lucide="phone" class="w-4 h-4 text-rose-600 dark:text-rose-400"></i>
                                     </a>
                                     <?php else: ?>
-                                    <div class="h-10 px-4 inline-flex items-center justify-center gap-2.5 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 rounded-xl text-sm font-semibold transition-colors shrink-0">
-                                        <span class="font-medium whitespace-nowrap text-xs"><?= lang('App.not_available') ?></span>
+                                    <div class="h-10 px-4 inline-flex items-center justify-center gap-2.5 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 rounded-xl text-sm font-semibold">
+                                        <span class="font-medium text-xs"><?= lang('App.not_available') ?></span>
                                         <i data-lucide="phone-off" class="w-4 h-4 opacity-50"></i>
                                     </div>
                                     <?php endif; ?>

@@ -234,30 +234,58 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
 
           return Card(
             margin: const EdgeInsets.only(bottom: 10),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              leading: CircleAvatar(
-                backgroundColor: AppColors.tealSoft,
-                child: const Icon(Icons.phone_in_talk, color: AppColors.emeraldDark),
-              ),
-              title: Text(
-                name.isEmpty ? app.t(en: 'Emergency contact', ur: 'ایمرجنسی رابطہ') : name,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-              subtitle: Text(
-                [
-                  if (category.isNotEmpty) category,
-                  if (phone.isNotEmpty) phone,
-                ].join('\n'),
-                textDirection: phone.isNotEmpty ? TextDirection.ltr : null,
-              ),
-              isThreeLine: category.isNotEmpty && phone.isNotEmpty,
-              trailing: phone.isEmpty
-                  ? null
-                  : IconButton(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: AppColors.tealSoft,
+                    child: const Icon(Icons.phone_in_talk, color: AppColors.emeraldDark),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name.isEmpty ? app.t(en: 'Emergency contact', ur: 'ایمرجنسی رابطہ') : name,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, height: 1.3),
+                        ),
+                        if (category.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            category,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white60
+                                  : AppColors.slate500,
+                            ),
+                          ),
+                        ],
+                        if (phone.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            phone,
+                            textDirection: TextDirection.ltr,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (phone.isNotEmpty)
+                    IconButton(
                       icon: const Icon(Icons.call, color: AppColors.emerald),
                       onPressed: () => _call(phone),
                     ),
+                ],
+              ),
             ),
           );
         },
