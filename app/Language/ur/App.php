@@ -549,6 +549,8 @@ return [
     'admin_area_name_en' => 'علاقہ کا نام (انگریزی) *',
     'admin_village_name_en' => 'گاؤں کا نام (انگریزی) *',
     'admin_years_service' => 'خدمت کے سال',
+    'admin_years_service_hint' => 'زیادہ سے زیادہ 500 حروف۔',
+    'admin_years_service_html_hint' => 'ٹول بار سے متن سٹائل کریں (بولڈ، رنگ، فہرست، لنک)۔ وال پر سٹائل کے ساتھ دکھے گا۔',
     'admin_featured_member' => 'نمایاں رکن',
     'admin_show_hero' => 'ہیرو کیروسل میں دکھائیں',
     'admin_english_personality_info' => 'انگریزی شخصیت کی معلومات',

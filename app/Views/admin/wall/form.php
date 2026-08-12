@@ -17,8 +17,8 @@
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
             <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider rtl:tracking-normal text-emerald-600 dark:text-emerald-400"><?= lang('App.admin_wall_section_1') ?></h3>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="md:col-span-1">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                         <?= lang('App.admin_category_label') ?>
                     </label>
@@ -53,18 +53,25 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1"><?= lang('App.admin_years_service') ?></label>
-                    <textarea name="years_of_service" rows="2" placeholder="e.g. 1980 - 2015"
-                              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium"><?= esc($person['years_of_service'] ?? '') ?></textarea>
-                </div>
-
-                <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1"><?= lang('App.admin_featured_member') ?></label>
                     <label class="flex items-center gap-2 pt-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300">
                         <input type="checkbox" name="featured" value="1" <?= (!empty($person['featured'])) ? 'checked' : '' ?> class="rounded text-emerald-600 focus:ring-emerald-500">
                         <span><?= lang('App.admin_show_hero') ?></span>
                     </label>
                 </div>
+            </div>
+
+            <div>
+                <?= view('components/rich_text_editor', [
+                    'name'          => 'years_of_service',
+                    'value'         => old('years_of_service', $person['years_of_service'] ?? ''),
+                    'label'         => lang('App.admin_years_service'),
+                    'hint'          => lang('App.admin_years_service_html_hint') ?: 'Use the toolbar to bold, color, lists, and links. Content is shown styled on the Wall.',
+                    'placeholder'   => 'e.g. Served as headmaster from 1980 to 2015…',
+                    'textareaClass' => 'w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium',
+                    'height'        => 240,
+                    'maxChars'      => 2000,
+                ]) ?>
             </div>
         </div>
 
@@ -461,5 +468,7 @@
   }
 })();
 </script>
+
+<?= view('components/rich_text_editor_assets') ?>
 
 <?= $this->endSection() ?>

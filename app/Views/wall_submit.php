@@ -76,9 +76,16 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1"><?= lang('App.admin_years_service') ?></label>
-                    <textarea name="years_of_service" rows="2" placeholder="e.g. 1980 – 2015"
-                              class="<?= esc($field) ?>"><?= esc(old('years_of_service')) ?></textarea>
+                    <?= view('components/rich_text_editor', [
+                        'name'          => 'years_of_service',
+                        'value'         => old('years_of_service'),
+                        'label'         => lang('App.admin_years_service'),
+                        'hint'          => lang('App.admin_years_service_html_hint') ?: 'Use the toolbar to bold, color, lists, and links.',
+                        'placeholder'   => 'e.g. Served as headmaster from 1980 to 2015…',
+                        'textareaClass' => $field,
+                        'height'        => 220,
+                        'maxChars'      => 2000,
+                    ]) ?>
                 </div>
 
                 <div class="p-4 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 space-y-4">
@@ -379,5 +386,7 @@
   }
 })();
 </script>
+
+<?= view('components/rich_text_editor_assets') ?>
 
 <?= $this->endSection() ?>

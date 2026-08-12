@@ -400,7 +400,7 @@
                                     <?php if (!empty($item['years_of_service'])): ?>
                                         <div class="flex items-start gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-4 max-w-full">
                                             <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5"></i>
-                                            <span class="whitespace-pre-wrap break-words leading-relaxed"><?= esc($item['years_of_service']) ?></span>
+                                            <div class="wall-years-html min-w-0 flex-1 leading-relaxed"><?= render_safe_html($item['years_of_service']) ?></div>
                                         </div>
                                     <?php endif; ?>
 

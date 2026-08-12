@@ -36,7 +36,13 @@
     <!-- Tailwind CSS -->
     <?php $appCssPath = FCPATH . 'css' . DIRECTORY_SEPARATOR . 'app.css'; ?>
     <link rel="stylesheet" href="<?= base_url('css/app.css') ?>?v=<?= is_file($appCssPath) ? filemtime($appCssPath) : time() ?>">
-    
+    <style>
+      .wall-years-html p { margin: 0 0 0.35em; }
+      .wall-years-html p:last-child { margin-bottom: 0; }
+      .wall-years-html ul, .wall-years-html ol { margin: 0.25em 0 0.25em 1.1em; padding: 0; }
+      .wall-years-html a { color: #059669; text-decoration: underline; }
+      .wall-years-html h3, .wall-years-html h4 { font-weight: 800; margin: 0.2em 0; font-size: 1em; }
+    </style>
     <!-- Alpine.js Plugins & Core -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.13.5/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>

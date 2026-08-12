@@ -103,7 +103,8 @@ class WallController extends BaseController
     public function store()
     {
         $rules = [
-            'name_en' => 'required|min_length[2]',
+            'name_en'          => 'required|min_length[2]',
+            'years_of_service' => 'permit_empty|max_length[5000]',
         ];
 
         if (!$this->validate($rules)) {
@@ -129,7 +130,7 @@ class WallController extends BaseController
             'achievements_ur'  => trim((string) $this->request->getPost('achievements_ur')),
             'awards_en'        => trim((string) $this->request->getPost('awards_en')),
             'awards_ur'        => trim((string) $this->request->getPost('awards_ur')),
-            'years_of_service' => trim((string) $this->request->getPost('years_of_service')),
+            'years_of_service' => sanitize_rich_text((string) $this->request->getPost('years_of_service')),
             'birth_date'       => $this->request->getPost('birth_date') ?: null,
             'death_date'       => $this->request->getPost('death_date') ?: null,
             'featured'         => $this->request->getPost('featured') ? 1 : 0,
@@ -213,7 +214,8 @@ class WallController extends BaseController
         }
 
         $rules = [
-            'name_en' => 'required|min_length[2]',
+            'name_en'          => 'required|min_length[2]',
+            'years_of_service' => 'permit_empty|max_length[5000]',
         ];
 
         if (!$this->validate($rules)) {
@@ -242,7 +244,7 @@ class WallController extends BaseController
             'achievements_ur'  => trim((string) $this->request->getPost('achievements_ur')),
             'awards_en'        => trim((string) $this->request->getPost('awards_en')),
             'awards_ur'        => trim((string) $this->request->getPost('awards_ur')),
-            'years_of_service' => trim((string) $this->request->getPost('years_of_service')),
+            'years_of_service' => sanitize_rich_text((string) $this->request->getPost('years_of_service')),
             'birth_date'       => $this->request->getPost('birth_date') ?: null,
             'death_date'       => $this->request->getPost('death_date') ?: null,
             'featured'         => $this->request->getPost('featured') ? 1 : 0,

@@ -150,6 +150,9 @@ class WallController extends BaseApiController
             'achievements'     => $e['display_achievements'] ?? ($e['achievements'] ?? ''),
             'awards'           => $e['display_awards'] ?? ($e['awards'] ?? ''),
             'years_of_service' => $e['years_of_service'] ?? '',
+            'years_of_service_text' => function_exists('plain_from_html')
+                ? plain_from_html($e['years_of_service'] ?? '')
+                : trim(strip_tags((string) ($e['years_of_service'] ?? ''))),
             'birth_date'       => $e['birth_date'] ?? '',
             'death_date'       => $e['death_date'] ?? '',
         ];

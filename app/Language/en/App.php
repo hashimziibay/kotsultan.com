@@ -549,6 +549,8 @@ return [
     'admin_area_name_en' => 'Area Name (English) *',
     'admin_village_name_en' => 'Village Name (English) *',
     'admin_years_service' => 'Years of Service',
+    'admin_years_service_hint' => 'Up to 500 characters.',
+    'admin_years_service_html_hint' => 'Use the toolbar to style text (bold, color, lists, links). Styled HTML is shown on the Wall.',
     'admin_featured_member' => 'Featured Member',
     'admin_show_hero' => 'Show in Hero Carousel',
     'admin_english_personality_info' => 'English Personality Info',

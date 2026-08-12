@@ -64,6 +64,7 @@ class WallSubmitController extends BaseController
             'name_en'         => 'required|min_length[2]|max_length[150]',
             'submitter_name'  => 'required|min_length[2]|max_length[150]',
             'submitter_phone' => 'required|min_length[10]|max_length[50]',
+            'years_of_service'=> 'permit_empty|max_length[5000]',
         ];
 
         if (! $this->validate($rules)) {
@@ -108,7 +109,7 @@ class WallSubmitController extends BaseController
             'profession_ur'    => trim((string) $this->request->getPost('profession_ur')),
             'intro_en'         => trim((string) $this->request->getPost('intro_en')),
             'intro_ur'         => trim((string) $this->request->getPost('intro_ur')),
-            'years_of_service' => trim((string) $this->request->getPost('years_of_service')),
+            'years_of_service' => sanitize_rich_text((string) $this->request->getPost('years_of_service')),
             'featured'         => 0,
             'display_order'    => 0,
             'status'           => 'pending',

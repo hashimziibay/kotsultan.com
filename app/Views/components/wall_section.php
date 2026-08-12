@@ -55,9 +55,10 @@ $displayEntries = ($mode === 'preview') ? array_slice($wallEntries ?? [], 0, 6) 
                             <?= esc($person['display_name']) ?>
                         </h3>
                         
-                        <span class="inline-block px-3 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-4 max-w-full whitespace-pre-wrap break-words leading-relaxed text-start">
-                            <?= lang('App.years_service') ?>: <?= esc($person['years_of_service']) ?>
-                        </span>
+                        <div class="inline-block px-3 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-4 max-w-full leading-relaxed text-start">
+                            <span class="opacity-80"><?= lang('App.years_service') ?>:</span>
+                            <div class="wall-years-html font-medium mt-0.5"><?= render_safe_html($person['years_of_service']) ?></div>
+                        </div>
                         
                         <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal line-clamp-4">
                             <?= esc($person['display_intro']) ?>
@@ -110,9 +111,10 @@ $displayEntries = ($mode === 'preview') ? array_slice($wallEntries ?? [], 0, 6) 
                         <?= esc($person['display_name']) ?>
                     </h3>
                     
-                    <span class="inline-block px-3 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-4 max-w-full whitespace-pre-wrap break-words leading-relaxed text-start">
-                        <?= lang('App.years_service') ?>: <?= esc($person['years_of_service']) ?>
-                    </span>
+                    <div class="inline-block px-3 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-4 max-w-full leading-relaxed text-start">
+                        <span class="opacity-80"><?= lang('App.years_service') ?>:</span>
+                        <div class="wall-years-html font-medium mt-0.5"><?= render_safe_html($person['years_of_service']) ?></div>
+                    </div>
                     
                     <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
                         <?= esc($person['display_intro']) ?>
